@@ -18,7 +18,7 @@ module.exports = {
       repo: 'https://github.com/alesikivan/plants-api',
       path: '/root/apps/plants-backend',
 
-      'post-deploy': `npm install && npm run build && pm2 delete plants-backend && pm2 start ecosystem.config.js && pm2 save --force`
+      'post-deploy': `source ~/.bashrc && npm install && npm run build && pm2 delete plants-backend && pm2 start ecosystem.config.js && pm2 save --force`
     }
   }
 };
