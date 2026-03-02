@@ -14,10 +14,18 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // Enable CORS for frontend
+  const allowedOrigins = [
+    /^http:\/\/localhost:\d+$/, // localhost on any port
+    'https://plantsheep.braavo.cloud',
+  ];
+
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow localhost on any port
-      if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
+      if (!origin) {
+        callback(null, true);
+      } else if (allowedOrigins.some((allowed) =>
+        allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
+      )) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
