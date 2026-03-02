@@ -49,7 +49,7 @@ async function bootstrap() {
   app.getHttpAdapter().get('/', (req, res) => {
     res.json({
       name: 'Plants API',
-      version: '1.0.0',
+      version: '1.0.1',
       status: 'running',
       apiDocs: 'Available at /api',
     });
