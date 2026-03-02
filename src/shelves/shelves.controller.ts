@@ -24,6 +24,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
+import { Public } from '../auth/decorators/public.decorator';
 import { Response } from 'express';
 import * as fs from 'fs';
 
@@ -113,6 +114,7 @@ export class ShelvesController {
     return this.shelvesService.update(id, updateShelfDto, file, req.user._id);
   }
 
+  @Public()
   @Get('photo/:filename')
   async getPhoto(@Param('filename') filename: string, @Res() res: Response) {
     const filePath = `./uploads/shelves/${filename}`;
