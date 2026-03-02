@@ -6,6 +6,7 @@ import { CreateShelfDto } from './dto/create-shelf.dto';
 import { UpdateShelfDto } from './dto/update-shelf.dto';
 import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
 import * as fs from 'fs';
+import { compressImage } from '../common/utils/compress-image';
 
 @Injectable()
 export class ShelvesService {
@@ -26,6 +27,7 @@ export class ShelvesService {
 
     if (file) {
       shelfData.photo = file.filename;
+      await compressImage(`./uploads/shelves/${file.filename}`);
     }
 
     const shelf = new this.shelfModel(shelfData);
@@ -155,6 +157,7 @@ export class ShelvesService {
         }
       }
       updateData.photo = file.filename;
+      await compressImage(`./uploads/shelves/${file.filename}`);
     }
 
     const shelf = await this.shelfModel

@@ -81,8 +81,8 @@ export function createImageUploadOptions(destination: string, prefix: string) {
   return {
     storage: createDiskStorage(destination, prefix),
     fileFilter: createImageFileFilter(),
-    // limits: {
-    //   fileSize: FILE_UPLOAD_CONFIG.MAX_FILE_SIZE, // 5MB max per file
-    // },
+    limits: {
+      fileSize: FILE_UPLOAD_CONFIG.MAX_FILE_SIZE, // 5MB max per file
+    },
   };
 }

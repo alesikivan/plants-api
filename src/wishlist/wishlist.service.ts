@@ -5,6 +5,7 @@ import { Wishlist, WishlistDocument } from './schemas/wishlist.schema';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 import * as fs from 'fs';
+import { compressImage } from '../common/utils/compress-image';
 
 @Injectable()
 export class WishlistService {
@@ -24,6 +25,7 @@ export class WishlistService {
 
     if (file) {
       wishlistData.photo = file.filename;
+      await compressImage(`./uploads/wishlist/${file.filename}`);
     }
 
     const wishlist = new this.wishlistModel(wishlistData);
@@ -94,6 +96,7 @@ export class WishlistService {
         }
       }
       updateData.photo = file.filename;
+      await compressImage(`./uploads/wishlist/${file.filename}`);
     }
 
     const wishlist = await this.wishlistModel

@@ -7,6 +7,7 @@ import { CreatePlantHistoryDto } from './dto/create-plant-history.dto';
 import { UpdatePlantHistoryDto } from './dto/update-plant-history.dto';
 import * as fs from 'fs';
 import * as path from 'path';
+import { compressImage } from '../common/utils/compress-image';
 
 @Injectable()
 export class PlantHistoryService {
@@ -44,6 +45,7 @@ export class PlantHistoryService {
 
     if (files && files.length > 0) {
       historyData.photos = files.map(file => file.filename);
+      await Promise.all(files.map(file => compressImage(`./uploads/plant-history/${file.filename}`)));
     }
 
     const history = new this.plantHistoryModel(historyData);
@@ -118,6 +120,7 @@ export class PlantHistoryService {
         ? updateData.photos
         : existingHistory.photos;
       updateData.photos = [...currentPhotos, ...files.map(file => file.filename)];
+      await Promise.all(files.map(file => compressImage(`./uploads/plant-history/${file.filename}`)));
     }
 
     const history = await this.plantHistoryModel
