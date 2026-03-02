@@ -15,10 +15,12 @@ export async function compressImage(filePath: string): Promise<void> {
 
     if (!format || format === 'gif' || format === 'svg') return;
 
-    const image = sharp(filePath).resize(1920, 1920, {
-      fit: 'inside',
-      withoutEnlargement: true,
-    });
+    const image = sharp(filePath)
+      .rotate() // auto-rotate based on EXIF orientation
+      .resize(1920, 1920, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      });
 
     if (format === 'png') {
       await image.png({ compressionLevel: 8 }).toFile(tempPath);
