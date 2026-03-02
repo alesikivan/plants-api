@@ -6,7 +6,7 @@ export class AppController {
   getApiInfo() {
     return {
       name: 'API Service',
-      version: '1.0.0',
+      version: '1.0.1',
       status: 'running',
     };
   }
