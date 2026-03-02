@@ -18,21 +18,7 @@ module.exports = {
       repo: 'https://github.com/alesikivan/plants-api',
       path: '/root/apps/plants-backend',
 
-      'post-deploy': `
-        set -e
-
-        export NVM_DIR="/root/.nvm"
-        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-
-        nvm use --lts
-
-        npm ci
-        npm run build
-
-        pm2 delete plants-backend || true
-        pm2 start ecosystem.config.js
-        pm2 save --force
-      `
+      'post-deploy': `npm install && npm run build && pm2 delete plants-backend && pm2 start ecosystem.config.js && pm2 save --force`
     }
   }
 };
