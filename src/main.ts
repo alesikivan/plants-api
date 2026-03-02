@@ -14,9 +14,10 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // Enable CORS for frontend
+  const frontendUrl = configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
   const allowedOrigins = [
     /^http:\/\/localhost:\d+$/, // localhost on any port
-    'https://plantsheep.braavo.cloud',
+    frontendUrl,
   ];
 
   app.enableCors({

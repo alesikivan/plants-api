@@ -9,6 +9,7 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { UserDocument } from '../users/schemas/user.schema';
+import { getAuthCookieOptions } from './cookie.config';
 
 @Controller('auth')
 export class AuthController {
@@ -57,13 +58,7 @@ export class AuthController {
     const result = await this.authService.refresh(payload.sub, payload.refreshToken);
 
     // Update only access token in cookie
-    response.cookie('accessToken', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000, // 15 minutes
-      path: '/',
-    });
+    response.cookie('accessToken', result.accessToken, getAuthCookieOptions('access'));
 
     return { message: 'Token refreshed successfully' };
   }
@@ -96,22 +91,7 @@ export class AuthController {
 
   // Helper method to set auth cookies
   private setAuthCookies(response: Response, accessToken: string, refreshToken: string): void {
-    // Access token - short lifetime (15 minutes)
-    response.cookie('accessToken', accessToken, {
-      httpOnly: true, // Not accessible via JavaScript
-      secure: process.env.NODE_ENV === 'production', // HTTPS in production
-      sameSite: 'lax', // CSRF protection
-      maxAge: 15 * 60 * 1000, // 15 minutes
-      path: '/',
-    });
-
-    // Refresh token - long lifetime (7 days)
-    response.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/',
-    });
+    response.cookie('accessToken', accessToken, getAuthCookieOptions('access'));
+    response.cookie('refreshToken', refreshToken, getAuthCookieOptions('refresh'));
   }
 }
