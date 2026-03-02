@@ -15,7 +15,7 @@ module.exports = {
       user: 'root',
       host: '77.37.49.238',
       ref: 'origin/main',
-      repo: 'https://github.com/alesikivan/plants',
+      repo: 'https://github.com/alesikivan/plants-api',
       path: '/root/apps/plants-backend',
 
       'post-deploy': `
