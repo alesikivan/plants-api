@@ -15,8 +15,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { ShelvesService } from './shelves.service';
 import { CreateShelfDto } from './dto/create-shelf.dto';
 import { UpdateShelfDto } from './dto/update-shelf.dto';
@@ -25,6 +23,10 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
 import { Public } from '../auth/decorators/public.decorator';
+import {
+  FILE_UPLOAD_CONFIG,
+  createImageUploadOptions,
+} from '../config/file-upload.config';
 import { Response } from 'express';
 import * as fs from 'fs';
 
@@ -34,25 +36,15 @@ export class ShelvesController {
   constructor(private readonly shelvesService: ShelvesService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('photo', {
-    storage: diskStorage({
-      destination: './uploads/shelves',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, `shelf-${uniqueSuffix}${ext}`);
-      },
-    }),
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-        return callback(new Error('Only image files are allowed!'), false);
-      }
-      callback(null, true);
-    },
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
-    },
-  }))
+  @UseInterceptors(
+    FileInterceptor(
+      'photo',
+      createImageUploadOptions(
+        FILE_UPLOAD_CONFIG.UPLOAD_DIRS.SHELVES,
+        FILE_UPLOAD_CONFIG.FILE_PREFIXES.SHELVES,
+      ),
+    ),
+  )
   create(
     @Body() createShelfDto: CreateShelfDto,
     @UploadedFile() file: Express.Multer.File,
@@ -86,25 +78,15 @@ export class ShelvesController {
   }
 
   @Patch(':id')
-  @UseInterceptors(FileInterceptor('photo', {
-    storage: diskStorage({
-      destination: './uploads/shelves',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, `shelf-${uniqueSuffix}${ext}`);
-      },
-    }),
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-        return callback(new Error('Only image files are allowed!'), false);
-      }
-      callback(null, true);
-    },
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
-    },
-  }))
+  @UseInterceptors(
+    FileInterceptor(
+      'photo',
+      createImageUploadOptions(
+        FILE_UPLOAD_CONFIG.UPLOAD_DIRS.SHELVES,
+        FILE_UPLOAD_CONFIG.FILE_PREFIXES.SHELVES,
+      ),
+    ),
+  )
   update(
     @Param('id') id: string,
     @Body() updateShelfDto: UpdateShelfDto,

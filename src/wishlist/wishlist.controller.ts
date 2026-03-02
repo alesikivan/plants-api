@@ -14,13 +14,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { WishlistService } from './wishlist.service';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../auth/decorators/public.decorator';
+import {
+  FILE_UPLOAD_CONFIG,
+  createImageUploadOptions,
+} from '../config/file-upload.config';
 import { Response } from 'express';
 import * as fs from 'fs';
 
@@ -30,25 +32,15 @@ export class WishlistController {
   constructor(private readonly wishlistService: WishlistService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('photo', {
-    storage: diskStorage({
-      destination: './uploads/wishlist',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, `wishlist-${uniqueSuffix}${ext}`);
-      },
-    }),
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-        return callback(new Error('Only image files are allowed!'), false);
-      }
-      callback(null, true);
-    },
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
-    },
-  }))
+  @UseInterceptors(
+    FileInterceptor(
+      'photo',
+      createImageUploadOptions(
+        FILE_UPLOAD_CONFIG.UPLOAD_DIRS.WISHLIST,
+        FILE_UPLOAD_CONFIG.FILE_PREFIXES.WISHLIST,
+      ),
+    ),
+  )
   create(
     @Body() createWishlistDto: CreateWishlistDto,
     @UploadedFile() file: Express.Multer.File,
@@ -68,25 +60,15 @@ export class WishlistController {
   }
 
   @Patch(':id')
-  @UseInterceptors(FileInterceptor('photo', {
-    storage: diskStorage({
-      destination: './uploads/wishlist',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, `wishlist-${uniqueSuffix}${ext}`);
-      },
-    }),
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-        return callback(new Error('Only image files are allowed!'), false);
-      }
-      callback(null, true);
-    },
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
-    },
-  }))
+  @UseInterceptors(
+    FileInterceptor(
+      'photo',
+      createImageUploadOptions(
+        FILE_UPLOAD_CONFIG.UPLOAD_DIRS.WISHLIST,
+        FILE_UPLOAD_CONFIG.FILE_PREFIXES.WISHLIST,
+      ),
+    ),
+  )
   update(
     @Param('id') id: string,
     @Body() updateWishlistDto: UpdateWishlistDto,

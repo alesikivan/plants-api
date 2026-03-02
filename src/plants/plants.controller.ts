@@ -15,8 +15,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { PlantsService } from './plants.service';
 import { PlantHistoryService } from './plant-history.service';
 import { CreatePlantDto } from './dto/create-plant.dto';
@@ -28,6 +26,10 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
 import { Public } from '../auth/decorators/public.decorator';
+import {
+  FILE_UPLOAD_CONFIG,
+  createImageUploadOptions,
+} from '../config/file-upload.config';
 import { Response } from 'express';
 import * as fs from 'fs';
 
@@ -40,25 +42,15 @@ export class PlantsController {
   ) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('photo', {
-    storage: diskStorage({
-      destination: './uploads/plants',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, `plant-${uniqueSuffix}${ext}`);
-      },
-    }),
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-        return callback(new Error('Only image files are allowed!'), false);
-      }
-      callback(null, true);
-    },
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
-    },
-  }))
+  @UseInterceptors(
+    FileInterceptor(
+      'photo',
+      createImageUploadOptions(
+        FILE_UPLOAD_CONFIG.UPLOAD_DIRS.PLANTS,
+        FILE_UPLOAD_CONFIG.FILE_PREFIXES.PLANTS,
+      ),
+    ),
+  )
   create(
     @Body() createPlantDto: CreatePlantDto,
     @UploadedFile() file: Express.Multer.File,
@@ -106,25 +98,15 @@ export class PlantsController {
   }
 
   @Patch(':id')
-  @UseInterceptors(FileInterceptor('photo', {
-    storage: diskStorage({
-      destination: './uploads/plants',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, `plant-${uniqueSuffix}${ext}`);
-      },
-    }),
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-        return callback(new Error('Only image files are allowed!'), false);
-      }
-      callback(null, true);
-    },
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
-    },
-  }))
+  @UseInterceptors(
+    FileInterceptor(
+      'photo',
+      createImageUploadOptions(
+        FILE_UPLOAD_CONFIG.UPLOAD_DIRS.PLANTS,
+        FILE_UPLOAD_CONFIG.FILE_PREFIXES.PLANTS,
+      ),
+    ),
+  )
   update(
     @Param('id') id: string,
     @Body() updatePlantDto: UpdatePlantDto,
@@ -152,26 +134,18 @@ export class PlantsController {
   }
 
   // Plant History endpoints
+  // Max 10 photos per history entry, each max 5MB
   @Post(':plantId/history')
-  @UseInterceptors(FilesInterceptor('photos', 10, {
-    storage: diskStorage({
-      destination: './uploads/plant-history',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, `history-${uniqueSuffix}${ext}`);
-      },
-    }),
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-        return callback(new Error('Only image files are allowed!'), false);
-      }
-      callback(null, true);
-    },
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
-    },
-  }))
+  @UseInterceptors(
+    FilesInterceptor(
+      'photos',
+      10,
+      createImageUploadOptions(
+        FILE_UPLOAD_CONFIG.UPLOAD_DIRS.PLANT_HISTORY,
+        FILE_UPLOAD_CONFIG.FILE_PREFIXES.PLANT_HISTORY,
+      ),
+    ),
+  )
   createHistory(
     @Param('plantId') plantId: string,
     @Body() createPlantHistoryDto: CreatePlantHistoryDto,
@@ -200,26 +174,18 @@ export class PlantsController {
     return this.plantHistoryService.findOne(plantId, historyId, req.user._id);
   }
 
+  // Max 10 photos per history entry, each max 5MB
   @Patch(':plantId/history/:historyId')
-  @UseInterceptors(FilesInterceptor('photos', 10, {
-    storage: diskStorage({
-      destination: './uploads/plant-history',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, `history-${uniqueSuffix}${ext}`);
-      },
-    }),
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-        return callback(new Error('Only image files are allowed!'), false);
-      }
-      callback(null, true);
-    },
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
-    },
-  }))
+  @UseInterceptors(
+    FilesInterceptor(
+      'photos',
+      10,
+      createImageUploadOptions(
+        FILE_UPLOAD_CONFIG.UPLOAD_DIRS.PLANT_HISTORY,
+        FILE_UPLOAD_CONFIG.FILE_PREFIXES.PLANT_HISTORY,
+      ),
+    ),
+  )
   updateHistory(
     @Param('plantId') plantId: string,
     @Param('historyId') historyId: string,
