@@ -19,9 +19,19 @@ module.exports = {
       path: '/root/apps/plants-backend',
 
       'post-deploy': `
-        export NVM_DIR="$HOME/.nvm"
+        set -e
+
+        export NVM_DIR="/root/.nvm"
         [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-        npm install && npm run build && pm2 delete plants-backend && pm2 start ecosystem.config.js && pm2 save --force
+
+        nvm use --lts
+
+        npm ci
+        npm run build
+
+        pm2 delete plants-backend || true
+        pm2 start ecosystem.config.js
+        pm2 save --force
       `
     }
   }
