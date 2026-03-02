@@ -18,3 +18,17 @@ export function getAuthCookieOptions(
         : 7 * 24 * 60 * 60 * 1000, // 7 days
   };
 }
+
+export function getClearCookieOptions(): CookieOptions {
+  const isProd = process.env.NODE_ENV === 'production';
+  const isSecure = isProd || process.env.FORCE_SECURE === 'true';
+
+  // Must match the options used when setting the cookie
+  return {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: isSecure ? 'none' : 'lax',
+    domain: isProd ? process.env.COOKIE_DOMAIN : undefined,
+    path: '/',
+  };
+}

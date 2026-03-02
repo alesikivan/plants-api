@@ -9,7 +9,7 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { UserDocument } from '../users/schemas/user.schema';
-import { getAuthCookieOptions } from './cookie.config';
+import { getAuthCookieOptions, getClearCookieOptions } from './cookie.config';
 
 @Controller('auth')
 export class AuthController {
@@ -72,9 +72,10 @@ export class AuthController {
   ): Promise<{ message: string }> {
     await this.authService.logout(user._id.toString());
 
-    // Clear cookies
-    response.clearCookie('accessToken', { path: '/' });
-    response.clearCookie('refreshToken', { path: '/' });
+    // Clear cookies with same options used when setting them
+    const clearOptions = getClearCookieOptions();
+    response.clearCookie('accessToken', clearOptions);
+    response.clearCookie('refreshToken', clearOptions);
 
     return { message: 'Logout successful' };
   }
@@ -84,8 +85,9 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   clearSession(@Res({ passthrough: true }) response: Response): { message: string } {
-    response.clearCookie('accessToken', { path: '/' });
-    response.clearCookie('refreshToken', { path: '/' });
+    const clearOptions = getClearCookieOptions();
+    response.clearCookie('accessToken', clearOptions);
+    response.clearCookie('refreshToken', clearOptions);
     return { message: 'Session cleared' };
   }
 
