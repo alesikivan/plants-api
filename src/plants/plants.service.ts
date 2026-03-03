@@ -3,16 +3,49 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Plant, PlantDocument } from './schemas/plant.schema';
 import { Shelf, ShelfDocument } from '../shelves/schemas/shelf.schema';
+import { Genus, GenusDocument } from '../genus/schemas/genus.schema';
+import { Variety, VarietyDocument } from '../variety/schemas/variety.schema';
 import { CreatePlantDto } from './dto/create-plant.dto';
 import { UpdatePlantDto } from './dto/update-plant.dto';
 import * as fs from 'fs';
 import { compressImage } from '../common/utils/compress-image';
+
+export interface PlantFilterDto {
+  search?: string;
+  genusId?: string;
+  varietyId?: string;
+  shelfId?: string;
+}
+
+/**
+ * Builds a regex that matches the search term case-insensitively for any
+ * script (Cyrillic, Latin, etc.) by expanding each character into a
+ * [lowerUpper] class, bypassing MongoDB PCRE's unreliable 'i' flag for
+ * non-ASCII characters.
+ */
+function buildCaseInsensitiveRegex(term: string): RegExp {
+  const pattern = term
+    .split('')
+    .map((char) => {
+      const lower = char.toLowerCase();
+      const upper = char.toUpperCase();
+      if (lower === upper) {
+        // Non-alphabetic — escape regex special chars
+        return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }
+      return `[${lower}${upper}]`;
+    })
+    .join('');
+  return new RegExp(pattern);
+}
 
 @Injectable()
 export class PlantsService {
   constructor(
     @InjectModel(Plant.name) private plantModel: Model<PlantDocument>,
     @InjectModel(Shelf.name) private shelfModel: Model<ShelfDocument>,
+    @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
+    @InjectModel(Variety.name) private varietyModel: Model<VarietyDocument>,
   ) {}
 
   async create(
@@ -44,9 +77,41 @@ export class PlantsService {
     return plant;
   }
 
-  async findAll(userId: string): Promise<Plant[]> {
+  async findAll(userId: string, filters: PlantFilterDto = {}): Promise<Plant[]> {
+    const query: any = { userId };
+
+    if (filters.genusId) {
+      query.genusId = filters.genusId;
+    }
+
+    if (filters.varietyId) {
+      query.varietyId = filters.varietyId;
+    }
+
+    if (filters.shelfId) {
+      query.shelfIds = filters.shelfId;
+    }
+
+    if (filters.search) {
+      // Build a regex that handles both registers for every character
+      // (Cyrillic included) without relying on the PCRE 'i' flag
+      const regex = buildCaseInsensitiveRegex(filters.search.trim());
+      const nameQuery = { $or: [{ nameRu: regex }, { nameEn: regex }] };
+
+      const [matchingGenera, matchingVarieties] = await Promise.all([
+        this.genusModel.find(nameQuery).select('_id'),
+        this.varietyModel.find(nameQuery).select('_id'),
+      ]);
+
+      // genusId/varietyId in plant docs are stored as strings, so compare as strings
+      query.$or = [
+        { genusId: { $in: matchingGenera.map((g) => g._id.toString()) } },
+        { varietyId: { $in: matchingVarieties.map((v) => v._id.toString()) } },
+      ];
+    }
+
     return await this.plantModel
-      .find({ userId })
+      .find(query)
       .populate('genusId')
       .populate('varietyId')
       .sort({ createdAt: -1 })

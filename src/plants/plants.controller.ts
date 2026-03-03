@@ -13,6 +13,7 @@ import {
   UploadedFiles,
   Res,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { PlantsService } from './plants.service';
@@ -60,8 +61,14 @@ export class PlantsController {
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.plantsService.findAll(req.user._id);
+  findAll(
+    @Request() req,
+    @Query('search') search?: string,
+    @Query('genusId') genusId?: string,
+    @Query('varietyId') varietyId?: string,
+    @Query('shelfId') shelfId?: string,
+  ) {
+    return this.plantsService.findAll(req.user._id, { search, genusId, varietyId, shelfId });
   }
 
   @Get('admin/all')
