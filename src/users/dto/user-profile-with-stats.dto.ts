@@ -8,6 +8,7 @@ export class UserProfileWithStatsDto {
   showPlants: boolean;
   showShelves: boolean;
   showPlantHistory: boolean;
+  avatar?: string;
   stats: {
     totalPlants: number;
     totalShelves: number;

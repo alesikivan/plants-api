@@ -2,6 +2,7 @@ import { Injectable, ConflictException, NotFoundException, ForbiddenException } 
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
+import * as fs from 'fs';
 import { User, UserDocument } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -13,6 +14,8 @@ import { Shelf, ShelfDocument } from '../shelves/schemas/shelf.schema';
 import { PlantHistory, PlantHistoryDocument } from '../plants/schemas/plant-history.schema';
 import { Wishlist, WishlistDocument } from '../wishlist/schemas/wishlist.schema';
 import { Role } from '../common/enums/role.enum';
+import { compressImage } from '../common/utils/compress-image';
+import { FILE_UPLOAD_CONFIG } from '../config/file-upload.config';
 
 @Injectable()
 export class UsersService {
@@ -100,6 +103,7 @@ export class UsersService {
           showPlants: user.showPlants ?? true,
           showShelves: user.showShelves ?? true,
           showPlantHistory: user.showPlantHistory ?? true,
+          avatar: user.avatar,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
           stats: {
@@ -134,6 +138,7 @@ export class UsersService {
       showPlants: user.showPlants ?? true,
       showShelves: user.showShelves ?? true,
       showPlantHistory: user.showPlantHistory ?? true,
+      avatar: user.avatar,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       stats: {
@@ -154,9 +159,57 @@ export class UsersService {
       showShelves: user.showShelves ?? true,
       showPlantHistory: user.showPlantHistory ?? true,
       isBlocked: user.isBlocked ?? false,
+      avatar: user.avatar,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     });
+  }
+
+  async uploadAvatar(userId: string, file: Express.Multer.File): Promise<UserDocument> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
+    }
+
+    // Remove old avatar file if exists
+    if (user.avatar) {
+      const oldPath = `${FILE_UPLOAD_CONFIG.UPLOAD_DIRS.AVATARS}/${user.avatar}`;
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    await compressImage(`${FILE_UPLOAD_CONFIG.UPLOAD_DIRS.AVATARS}/${file.filename}`);
+
+    const updated = await this.userModel.findByIdAndUpdate(
+      userId,
+      { avatar: file.filename },
+      { new: true },
+    ).exec();
+
+    return updated;
+  }
+
+  async removeAvatar(userId: string): Promise<UserDocument> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
+    }
+
+    if (user.avatar) {
+      const filePath = `${FILE_UPLOAD_CONFIG.UPLOAD_DIRS.AVATARS}/${user.avatar}`;
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    const updated = await this.userModel.findByIdAndUpdate(
+      userId,
+      { $unset: { avatar: '' } },
+      { new: true },
+    ).exec();
+
+    return updated;
   }
 
   async adminUpdateUser(userId: string, dto: AdminUpdateUserDto): Promise<UserDocument> {

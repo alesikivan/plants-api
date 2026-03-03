@@ -29,6 +29,7 @@ export const FILE_UPLOAD_CONFIG = {
     PLANT_HISTORY: './uploads/plant-history',
     SHELVES: './uploads/shelves',
     WISHLIST: './uploads/wishlist',
+    AVATARS: './uploads/avatars',
   },
 
   // File naming prefixes for different upload types
@@ -37,6 +38,7 @@ export const FILE_UPLOAD_CONFIG = {
     PLANT_HISTORY: 'history',
     SHELVES: 'shelf',
     WISHLIST: 'wishlist',
+    AVATARS: 'avatar',
   },
 };
 

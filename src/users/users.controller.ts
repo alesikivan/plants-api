@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Patch, Delete, Body, UseGuards, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, UseGuards, Param, Query, HttpCode, HttpStatus, UseInterceptors, UploadedFile, Res, NotFoundException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { UserResponseDto } from './dto/user-response.dto';
 import { UserProfileWithStatsDto } from './dto/user-profile-with-stats.dto';
@@ -9,8 +10,12 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { Role } from '../common/enums/role.enum';
 import { UserDocument } from './schemas/user.schema';
+import { FILE_UPLOAD_CONFIG, createImageUploadOptions } from '../config/file-upload.config';
+import { Response } from 'express';
+import * as fs from 'fs';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -39,6 +44,41 @@ export class UsersController {
   ): Promise<UserResponseDto> {
     const updatedUser = await this.usersService.updateProfile(user._id.toString(), updateUserDto);
     return this.usersService.toResponseDto(updatedUser);
+  }
+
+  @Patch('profile/avatar')
+  @UseInterceptors(
+    FileInterceptor(
+      'avatar',
+      createImageUploadOptions(
+        FILE_UPLOAD_CONFIG.UPLOAD_DIRS.AVATARS,
+        FILE_UPLOAD_CONFIG.FILE_PREFIXES.AVATARS,
+      ),
+    ),
+  )
+  async uploadAvatar(
+    @CurrentUser() user: UserDocument,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<UserResponseDto> {
+    const updatedUser = await this.usersService.uploadAvatar(user._id.toString(), file);
+    return this.usersService.toResponseDto(updatedUser);
+  }
+
+  @Delete('profile/avatar')
+  @HttpCode(HttpStatus.OK)
+  async removeAvatar(@CurrentUser() user: UserDocument): Promise<UserResponseDto> {
+    const updatedUser = await this.usersService.removeAvatar(user._id.toString());
+    return this.usersService.toResponseDto(updatedUser);
+  }
+
+  @Get('avatar/:filename')
+  @Public()
+  async getAvatar(@Param('filename') filename: string, @Res() res: Response) {
+    const filePath = `${FILE_UPLOAD_CONFIG.UPLOAD_DIRS.AVATARS}/${filename}`;
+    if (!fs.existsSync(filePath)) {
+      throw new NotFoundException('Аватар не найден');
+    }
+    return res.sendFile(filename, { root: FILE_UPLOAD_CONFIG.UPLOAD_DIRS.AVATARS });
   }
 
   @Get(':userId/plants')

@@ -36,6 +36,9 @@ export class User {
   @Prop({ type: Boolean, default: false })
   isBlocked: boolean;
 
+  @Prop({ type: String })
+  avatar?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
