@@ -137,7 +137,7 @@ export class UsersController {
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   async adminCreateUser(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    const user = await this.usersService.create(createUserDto);
+    const { user } = await this.usersService.create(createUserDto, true);
     return this.usersService.toResponseDto(user);
   }
 

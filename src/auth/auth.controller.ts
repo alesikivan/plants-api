@@ -1,8 +1,10 @@
-import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus, Res, Get } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus, Res, Get, Query } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
@@ -18,17 +20,37 @@ export class AuthController {
   @Post('register')
   async register(
     @Body() registerDto: RegisterDto,
-    @Res({ passthrough: true }) response: Response,
-  ): Promise<AuthResponseDto> {
-    const result = await this.authService.register(registerDto);
+  ): Promise<{ requiresVerification: true }> {
+    return this.authService.register(registerDto);
+  }
 
-    // Set httpOnly cookies
-    this.setAuthCookies(response, result.accessToken, result.refreshToken);
+  @Public()
+  @Get('verify-email')
+  async verifyEmail(@Query('token') token: string): Promise<{ message: string }> {
+    await this.authService.verifyEmail(token);
+    return { message: 'Email успешно подтверждён' };
+  }
 
-    // Return only user data (without tokens)
-    return new AuthResponseDto({
-      user: this.authService['usersService'].toResponseDto(result.user),
-    });
+  @Public()
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  async resendVerification(@Body() body: { email: string }): Promise<{ message: string }> {
+    await this.authService.resendVerification(body.email);
+    return { message: 'Если аккаунт существует, письмо отправлено' };
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ message: string }> {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
+    return this.authService.resetPassword(dto.token, dto.password);
   }
 
   @Post('login')

@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+import { MailerService } from '../mailer/mailer.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
@@ -19,12 +20,41 @@ interface AuthResult {
 export class AuthService {
   constructor(
     private usersService: UsersService,
+    private mailerService: MailerService,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<AuthResult> {
-    const user = await this.usersService.create(registerDto);
+  async register(registerDto: RegisterDto): Promise<{ requiresVerification: true }> {
+    const { user, verificationToken } = await this.usersService.create(registerDto);
+    const frontendUrl = this.configService.get<string>('frontendUrl') || process.env.FRONTEND_URL;
+
+    try {
+      if (verificationToken) {
+        await this.mailerService.sendVerificationEmail(user.email, verificationToken, frontendUrl);
+      }
+    } catch (err) {
+      // Log email send failure but don't fail registration
+      console.error('Failed to send verification email:', err);
+    }
+
+    return { requiresVerification: true };
+  }
+
+  async login(loginDto: LoginDto): Promise<AuthResult> {
+    const user = await this.validateUser(loginDto.email, loginDto.password);
+    if (!user) {
+      throw new UnauthorizedException('Неверный логин или пароль');
+    }
+
+    if (user.isBlocked) {
+      throw new ForbiddenException('Ваш аккаунт заблокирован');
+    }
+
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException({ message: 'Email не подтверждён', code: 'EMAIL_NOT_VERIFIED' });
+    }
+
     const tokens = await this.generateTokens({
       sub: user._id.toString(),
       email: user.email,
@@ -40,29 +70,29 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResult> {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
+  async verifyEmail(token: string): Promise<void> {
+    const user = await this.usersService.findByVerificationToken(token);
     if (!user) {
-      throw new UnauthorizedException('Неверный логин или пароль');
+      throw new BadRequestException('Недействительная или просроченная ссылка подтверждения');
+    }
+    await this.usersService.markEmailVerified(user._id.toString());
+  }
+
+  async resendVerification(email: string): Promise<void> {
+    const user = await this.usersService.findByEmail(email);
+    // Silently succeed to prevent email enumeration
+    if (!user || user.isEmailVerified) {
+      return;
     }
 
-    if (user.isBlocked) {
-      throw new ForbiddenException('Ваш аккаунт заблокирован');
+    const token = await this.usersService.setNewVerificationToken(user._id.toString());
+    const frontendUrl = this.configService.get<string>('frontendUrl') || process.env.FRONTEND_URL;
+
+    try {
+      await this.mailerService.sendVerificationEmail(user.email, token, frontendUrl);
+    } catch (err) {
+      console.error('Failed to resend verification email:', err);
     }
-
-    const tokens = await this.generateTokens({
-      sub: user._id.toString(),
-      email: user.email,
-      role: user.role,
-    });
-
-    await this.usersService.updateRefreshToken(user._id.toString(), tokens.refreshToken);
-
-    return {
-      user,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-    };
   }
 
   async refresh(userId: string, refreshToken: string): Promise<{ accessToken: string }> {
@@ -92,6 +122,30 @@ export class AuthService {
     });
 
     return { accessToken };
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const user = await this.usersService.findByEmail(email);
+    if (user) {
+      const token = await this.usersService.setPasswordResetToken(user._id.toString());
+      const frontendUrl = this.configService.get<string>('frontendUrl') || process.env.FRONTEND_URL;
+      try {
+        await this.mailerService.sendPasswordResetEmail(email, token, frontendUrl);
+      } catch (err) {
+        console.error('Failed to send password reset email:', err);
+      }
+    }
+    return { message: 'If the account exists, an email was sent' };
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    const user = await this.usersService.findByPasswordResetToken(token);
+    if (!user) {
+      throw new BadRequestException('Ссылка недействительна или устарела');
+    }
+    await this.usersService.resetPassword(user._id.toString(), newPassword);
+    await this.usersService.updateRefreshToken(user._id.toString(), null);
+    return { message: 'Password reset successfully' };
   }
 
   async logout(userId: string): Promise<void> {

@@ -36,8 +36,23 @@ export class User {
   @Prop({ type: Boolean, default: false })
   isBlocked: boolean;
 
+  @Prop({ type: Boolean, default: true })
+  isEmailVerified: boolean;
+
+  @Prop({ type: String, default: null })
+  emailVerificationToken?: string;
+
+  @Prop({ type: Date, default: null })
+  emailVerificationExpires?: Date;
+
   @Prop({ type: String })
   avatar?: string;
+
+  @Prop({ type: String, default: null })
+  passwordResetToken?: string;
+
+  @Prop({ type: Date, default: null })
+  passwordResetExpires?: Date;
 
   createdAt: Date;
   updatedAt: Date;

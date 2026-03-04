@@ -2,6 +2,7 @@ import { Injectable, ConflictException, NotFoundException, ForbiddenException } 
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import { User, UserDocument } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -27,7 +28,7 @@ export class UsersService {
     @InjectModel(Wishlist.name) private wishlistModel: Model<WishlistDocument>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<UserDocument> {
+  async create(createUserDto: CreateUserDto, skipVerification = false): Promise<{ user: UserDocument; verificationToken: string | null }> {
     const existingUser = await this.userModel.findOne({ email: createUserDto.email });
     if (existingUser) {
       throw new ConflictException('Пользователь с таким email уже существует');
@@ -39,12 +40,76 @@ export class UsersService {
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+    let verificationToken: string | null = null;
+    let verificationFields = {};
+
+    if (!skipVerification) {
+      verificationToken = crypto.randomBytes(32).toString('hex');
+      verificationFields = {
+        isEmailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      };
+    }
+
     const user = new this.userModel({
       ...createUserDto,
       password: hashedPassword,
+      ...verificationFields,
     });
 
-    return user.save();
+    const saved = await user.save();
+    return { user: saved, verificationToken };
+  }
+
+  async findByVerificationToken(token: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({
+      emailVerificationToken: token,
+      emailVerificationExpires: { $gt: new Date() },
+    }).exec();
+  }
+
+  async markEmailVerified(userId: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, {
+      isEmailVerified: true,
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+    });
+  }
+
+  async setNewVerificationToken(userId: string): Promise<string> {
+    const token = crypto.randomBytes(32).toString('hex');
+    await this.userModel.findByIdAndUpdate(userId, {
+      emailVerificationToken: token,
+      emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
+    return token;
+  }
+
+  async setPasswordResetToken(userId: string): Promise<string> {
+    const token = crypto.randomBytes(32).toString('hex');
+    await this.userModel.findByIdAndUpdate(userId, {
+      passwordResetToken: token,
+      passwordResetExpires: new Date(Date.now() + 60 * 60 * 1000),
+    });
+    return token;
+  }
+
+  async findByPasswordResetToken(token: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({
+      passwordResetToken: token,
+      passwordResetExpires: { $gt: new Date() },
+    }).exec();
+  }
+
+  async resetPassword(userId: string, newPassword: string): Promise<void> {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.userModel.findByIdAndUpdate(userId, {
+      password: hashedPassword,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+    });
   }
 
   async findByEmail(email: string): Promise<UserDocument | null> {

@@ -27,12 +27,12 @@ async function bootstrap() {
   const usersService = app.get(UsersService);
 
   try {
-    const user = await usersService.create({
+    const { user } = await usersService.create({
       email,
       password,
       name,
       role: Role.ADMIN,
-    });
+    }, true);
 
     console.log('✅ Аккаунт администратора успешно создан!');
     console.log(`   ID: ${user._id.toString()}`);
