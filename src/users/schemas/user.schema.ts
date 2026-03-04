@@ -4,6 +4,12 @@ import { Role } from '../../common/enums/role.enum';
 
 export type UserDocument = User & Document;
 
+export interface SocialLink {
+  type: string;
+  value: string;
+  isPublic: boolean;
+}
+
 @Schema({ timestamps: true })
 export class User {
   @Prop({ required: true, unique: true })
@@ -53,6 +59,18 @@ export class User {
 
   @Prop({ type: Date, default: null })
   passwordResetExpires?: Date;
+
+  @Prop({
+    type: [
+      {
+        type: { type: String },
+        value: { type: String },
+        isPublic: { type: Boolean, default: false },
+      },
+    ],
+    default: [],
+  })
+  socialLinks?: SocialLink[];
 
   createdAt: Date;
   updatedAt: Date;

@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -27,6 +27,55 @@ export class UsersService {
     @InjectModel(PlantHistory.name) private plantHistoryModel: Model<PlantHistoryDocument>,
     @InjectModel(Wishlist.name) private wishlistModel: Model<WishlistDocument>,
   ) {}
+
+  private validateSocialLinks(socialLinks: any[]): void {
+    if (!Array.isArray(socialLinks)) {
+      throw new BadRequestException('Social links must be an array');
+    }
+
+    for (const link of socialLinks) {
+      if (!link.type || !link.value) {
+        throw new BadRequestException('Each social link must have type and value');
+      }
+
+      if (typeof link.type !== 'string' || typeof link.value !== 'string') {
+        throw new BadRequestException('Social link type and value must be strings');
+      }
+
+      if (typeof link.isPublic !== 'boolean') {
+        throw new BadRequestException('Social link isPublic must be a boolean');
+      }
+
+      // Basic validation per type
+      if (link.type === 'telegram' && !this.isValidTelegram(link.value)) {
+        throw new BadRequestException('Invalid Telegram handle');
+      }
+      if (link.type === 'instagram' && !this.isValidInstagram(link.value)) {
+        throw new BadRequestException('Invalid Instagram handle');
+      }
+      if (link.type === 'phone' && !this.isValidPhone(link.value)) {
+        throw new BadRequestException('Invalid phone number');
+      }
+    }
+  }
+
+  private isValidTelegram(value: string): boolean {
+    return /^@?[a-zA-Z0-9_]{5,32}$/.test(value) || /^https?:\/\/(t\.me|telegram\.me)\/[a-zA-Z0-9_]{5,32}/.test(value);
+  }
+
+  private isValidInstagram(value: string): boolean {
+    return /^@?[a-zA-Z0-9_.]{1,30}$/.test(value) || /^https?:\/\/(?:www\.)?instagram\.com\/[a-zA-Z0-9_.]{1,30}/.test(value);
+  }
+
+  private isValidPhone(value: string): boolean {
+    // Simple E.164 format or basic phone formats
+    return /^\+?[1-9]\d{1,14}$/.test(value.replace(/[\s\-()]/g, ''));
+  }
+
+  private filterPublicSocialLinks(socialLinks: any[]): any[] {
+    if (!socialLinks) return [];
+    return socialLinks.filter(link => link.isPublic === true);
+  }
 
   async create(createUserDto: CreateUserDto, skipVerification = false): Promise<{ user: UserDocument; verificationToken: string | null }> {
     const existingUser = await this.userModel.findOne({ email: createUserDto.email });
@@ -130,6 +179,10 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, updateUserDto: UpdateUserDto): Promise<UserDocument> {
+    if (updateUserDto.socialLinks) {
+      this.validateSocialLinks(updateUserDto.socialLinks);
+    }
+
     const user = await this.userModel.findByIdAndUpdate(
       userId,
       updateUserDto,
@@ -169,6 +222,7 @@ export class UsersService {
           showShelves: user.showShelves ?? true,
           showPlantHistory: user.showPlantHistory ?? true,
           avatar: user.avatar,
+          socialLinks: this.filterPublicSocialLinks(user.socialLinks),
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
           stats: {
@@ -204,6 +258,7 @@ export class UsersService {
       showShelves: user.showShelves ?? true,
       showPlantHistory: user.showPlantHistory ?? true,
       avatar: user.avatar,
+      socialLinks: this.filterPublicSocialLinks(user.socialLinks),
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       stats: {
@@ -225,6 +280,7 @@ export class UsersService {
       showPlantHistory: user.showPlantHistory ?? true,
       isBlocked: user.isBlocked ?? false,
       avatar: user.avatar,
+      socialLinks: user.socialLinks || [],
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     });

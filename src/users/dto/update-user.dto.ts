@@ -1,4 +1,16 @@
-import { IsEnum, IsOptional, IsBoolean } from 'class-validator';
+import { IsEnum, IsOptional, IsBoolean, IsArray, ValidateNested, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class SocialLinkDto {
+  @IsString()
+  type: string;
+
+  @IsString()
+  value: string;
+
+  @IsBoolean()
+  isPublic: boolean;
+}
 
 export class UpdateUserDto {
   @IsEnum(['ru', 'en'])
@@ -16,4 +28,10 @@ export class UpdateUserDto {
   @IsBoolean()
   @IsOptional()
   showPlantHistory?: boolean;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SocialLinkDto)
+  @IsOptional()
+  socialLinks?: SocialLinkDto[];
 }

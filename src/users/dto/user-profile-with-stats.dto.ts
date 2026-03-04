@@ -1,3 +1,5 @@
+import { SocialLink } from '../schemas/user.schema';
+
 export class UserProfileWithStatsDto {
   id: string;
   name: string;
@@ -9,6 +11,7 @@ export class UserProfileWithStatsDto {
   showShelves: boolean;
   showPlantHistory: boolean;
   avatar?: string;
+  socialLinks?: SocialLink[];
   stats: {
     totalPlants: number;
     totalShelves: number;

@@ -1,4 +1,5 @@
 import { Role } from '../../common/enums/role.enum';
+import { SocialLink } from '../schemas/user.schema';
 
 export class UserResponseDto {
   id: string;
@@ -11,6 +12,7 @@ export class UserResponseDto {
   showPlantHistory: boolean;
   isBlocked: boolean;
   avatar?: string;
+  socialLinks?: SocialLink[];
   createdAt: Date;
   updatedAt: Date;
 
