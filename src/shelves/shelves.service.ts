@@ -51,6 +51,7 @@ export class ShelvesService {
             .find({
               _id: { $in: shelf.plantIds.slice(0, 3) }, // Только первые 3
               userId,
+              isArchived: { $ne: true },
             })
             .populate('genusId')
             .populate('varietyId')
@@ -60,6 +61,7 @@ export class ShelvesService {
           plants = await this.plantModel
             .find({
               userId,
+              isArchived: { $ne: true },
               $or: [
                 { shelfIds: shelf._id },
                 { shelfId: shelf._id }
@@ -97,6 +99,7 @@ export class ShelvesService {
         .find({
           _id: { $in: shelf.plantIds },
           userId,
+          isArchived: { $ne: true },
         })
         .populate('genusId')
         .populate('varietyId')
@@ -107,6 +110,7 @@ export class ShelvesService {
       plants = await this.plantModel
         .find({
           userId,
+          isArchived: { $ne: true },
           $or: [
             { shelfIds: shelf._id },
             { shelfId: shelf._id }
@@ -175,11 +179,19 @@ export class ShelvesService {
       throw new NotFoundException(`Shelf with ID ${id} not found`);
     }
 
-    // Убрать полку из массива shelfIds у всех растений
-    await this.plantModel.updateMany(
-      { shelfIds: result._id },
-      { $pull: { shelfIds: result._id } },
-    ).exec();
+    // Убрать полку из массива shelfIds у всех растений (и старое поле shelfId)
+    // Используем обе формы ID (ObjectId и string) на случай несоответствия типов
+    const shelfIdStr = result._id.toString();
+    await Promise.all([
+      this.plantModel.updateMany(
+        { shelfIds: { $in: [result._id, shelfIdStr] } },
+        { $pull: { shelfIds: { $in: [result._id, shelfIdStr] } } },
+      ).exec(),
+      this.plantModel.updateMany(
+        { shelfId: { $in: [result._id, shelfIdStr] } },
+        { $unset: { shelfId: '' } },
+      ).exec(),
+    ]);
 
     // Delete photo if exists
     if (result.photo) {
@@ -204,10 +216,17 @@ export class ShelvesService {
       throw new NotFoundException(`Shelf with ID ${id} not found`);
     }
 
-    await this.plantModel.updateMany(
-      { shelfIds: result._id },
-      { $pull: { shelfIds: result._id } },
-    ).exec();
+    const shelfIdStr = result._id.toString();
+    await Promise.all([
+      this.plantModel.updateMany(
+        { shelfIds: { $in: [result._id, shelfIdStr] } },
+        { $pull: { shelfIds: { $in: [result._id, shelfIdStr] } } },
+      ).exec(),
+      this.plantModel.updateMany(
+        { shelfId: { $in: [result._id, shelfIdStr] } },
+        { $unset: { shelfId: '' } },
+      ).exec(),
+    ]);
 
     if (result.photo) {
       const photoPath = `./uploads/shelves/${result.photo}`;

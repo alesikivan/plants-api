@@ -210,7 +210,7 @@ export class UsersService {
     // Получаем статистику для каждого пользователя
     const usersWithStats = await Promise.all(
       users.map(async (user) => {
-        const totalPlants = await this.plantModel.countDocuments({ userId: user._id }).exec();
+        const totalPlants = await this.plantModel.countDocuments({ userId: user._id, isArchived: { $ne: true } }).exec();
         const totalShelves = await this.shelfModel.countDocuments({ userId: user._id }).exec();
 
         return new UserProfileWithStatsDto({
@@ -386,7 +386,7 @@ export class UsersService {
       throw new ForbiddenException('Пользователь скрыл свою коллекцию растений');
     }
     return this.plantModel
-      .find({ userId: user._id })
+      .find({ userId: user._id, isArchived: { $ne: true } })
       .populate('genusId')
       .populate('varietyId')
       .sort({ createdAt: -1 })
@@ -402,7 +402,7 @@ export class UsersService {
       throw new ForbiddenException('Пользователь скрыл свою коллекцию растений');
     }
     const plant = await this.plantModel
-      .findOne({ _id: plantId, userId: user._id })
+      .findOne({ _id: plantId, userId: user._id, isArchived: { $ne: true } })
       .populate('genusId')
       .populate('varietyId')
       .populate('shelfIds')
@@ -421,7 +421,7 @@ export class UsersService {
     if (requesterRole !== Role.ADMIN && !(user.showPlantHistory ?? true)) {
       throw new ForbiddenException('Пользователь скрыл историю своих растений');
     }
-    const plant = await this.plantModel.findOne({ _id: plantId, userId: user._id }).exec();
+    const plant = await this.plantModel.findOne({ _id: plantId, userId: user._id, isArchived: { $ne: true } }).exec();
     if (!plant) {
       throw new NotFoundException('Растение не найдено');
     }
@@ -452,12 +452,12 @@ export class UsersService {
         let plants = [];
         if (shelf.plantIds && shelf.plantIds.length > 0) {
           plants = await this.plantModel
-            .find({ _id: { $in: shelf.plantIds.slice(0, 3) }, userId: user._id })
+            .find({ _id: { $in: shelf.plantIds.slice(0, 3) }, userId: user._id, isArchived: { $ne: true } })
             .populate('genusId')
             .populate('varietyId')
             .exec();
         }
-        return { ...shelf.toObject(), plants };
+        return { ...shelf.toObject(), plants, plantsCount: shelf.plantIds?.length || 0 };
       }),
     );
   }
@@ -477,7 +477,7 @@ export class UsersService {
     let plants = [];
     if (shelf.plantIds && shelf.plantIds.length > 0) {
       plants = await this.plantModel
-        .find({ _id: { $in: shelf.plantIds }, userId: user._id })
+        .find({ _id: { $in: shelf.plantIds }, userId: user._id, isArchived: { $ne: true } })
         .populate('genusId')
         .populate('varietyId')
         .sort({ createdAt: -1 })

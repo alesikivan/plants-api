@@ -26,6 +26,9 @@ export class Plant {
   @Prop()
   description?: string;
 
+  @Prop({ default: false })
+  isArchived: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }

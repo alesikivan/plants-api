@@ -15,6 +15,7 @@ export interface PlantFilterDto {
   genusId?: string;
   varietyId?: string;
   shelfId?: string;
+  showArchived?: boolean;
 }
 
 /**
@@ -78,7 +79,7 @@ export class PlantsService {
   }
 
   async findAll(userId: string, filters: PlantFilterDto = {}): Promise<Plant[]> {
-    const query: any = { userId };
+    const query: any = { userId, isArchived: filters.showArchived ? true : { $ne: true } };
 
     if (filters.genusId) {
       query.genusId = filters.genusId;
@@ -228,6 +229,46 @@ export class PlantsService {
         fs.unlinkSync(photoPath);
       }
     }
+  }
+
+  async archive(id: string, userId: string): Promise<Plant> {
+    const existing = await this.plantModel.findOne({ _id: id, userId }).exec();
+    if (!existing) {
+      throw new NotFoundException(`Plant with ID ${id} not found`);
+    }
+
+    // Удалить из всех полок (обе формы ID на случай несоответствия типов)
+    const plantIdStr = existing._id.toString();
+    await this.shelfModel.updateMany(
+      { plantIds: { $in: [existing._id, plantIdStr] } },
+      { $pull: { plantIds: { $in: [existing._id, plantIdStr] } } }
+    );
+
+    const plant = await this.plantModel
+      .findOneAndUpdate(
+        { _id: id, userId },
+        { isArchived: true, shelfIds: [] },
+        { new: true }
+      )
+      .populate('genusId')
+      .populate('varietyId')
+      .exec();
+
+    return plant;
+  }
+
+  async unarchive(id: string, userId: string): Promise<Plant> {
+    const plant = await this.plantModel
+      .findOneAndUpdate({ _id: id, userId }, { isArchived: false }, { new: true })
+      .populate('genusId')
+      .populate('varietyId')
+      .exec();
+
+    if (!plant) {
+      throw new NotFoundException(`Plant with ID ${id} not found`);
+    }
+
+    return plant;
   }
 
   async adminFindAll(): Promise<Plant[]> {

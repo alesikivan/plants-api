@@ -67,8 +67,15 @@ export class PlantsController {
     @Query('genusId') genusId?: string,
     @Query('varietyId') varietyId?: string,
     @Query('shelfId') shelfId?: string,
+    @Query('showArchived') showArchived?: string,
   ) {
-    return this.plantsService.findAll(req.user._id, { search, genusId, varietyId, shelfId });
+    return this.plantsService.findAll(req.user._id, {
+      search,
+      genusId,
+      varietyId,
+      shelfId,
+      showArchived: showArchived === 'true',
+    });
   }
 
   @Get('admin/all')
@@ -133,6 +140,16 @@ export class PlantsController {
     }
 
     return res.sendFile(filename, { root: './uploads/plants' });
+  }
+
+  @Patch(':id/archive')
+  archive(@Param('id') id: string, @Request() req) {
+    return this.plantsService.archive(id, req.user._id);
+  }
+
+  @Patch(':id/unarchive')
+  unarchive(@Param('id') id: string, @Request() req) {
+    return this.plantsService.unarchive(id, req.user._id);
   }
 
   @Delete(':id')
