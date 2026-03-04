@@ -74,6 +74,7 @@ export class ShelvesService {
         return {
           ...shelf.toObject(),
           plants,
+          plantsCount: shelf.plantIds?.length || 0,
         };
       }),
     );
