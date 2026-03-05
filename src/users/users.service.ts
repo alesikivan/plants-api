@@ -175,7 +175,8 @@ export class UsersService {
   }
 
   async findAll(): Promise<UserDocument[]> {
-    return this.userModel.find({ isBlocked: { $ne: true } }).exec();
+    // Admin listing should include blocked users as well.
+    return this.userModel.find().exec();
   }
 
   async updateProfile(userId: string, updateUserDto: UpdateUserDto): Promise<UserDocument> {
