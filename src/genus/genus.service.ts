@@ -5,6 +5,7 @@ import { Genus, GenusDocument } from './schemas/genus.schema';
 import { CreateGenusDto } from './dto/create-genus.dto';
 import { UpdateGenusDto } from './dto/update-genus.dto';
 import { AiService, PlantNameSuggestion } from '../ai/ai.service';
+import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
 
 export interface ValidateGenusResult {
   suggestion: PlantNameSuggestion;
@@ -14,6 +15,7 @@ export interface ValidateGenusResult {
 export class GenusService {
   constructor(
     @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
+    @InjectModel(Plant.name) private plantModel: Model<PlantDocument>,
     private aiService: AiService,
   ) {}
 
@@ -70,6 +72,11 @@ export class GenusService {
   }
 
   async remove(id: string): Promise<void> {
+    const plantsCount = await this.plantModel.countDocuments({ genusId: id }).exec();
+    if (plantsCount > 0) {
+      throw new ConflictException('Нельзя удалить род: есть растения, связанные с этим родом');
+    }
+
     const result = await this.genusModel.findByIdAndDelete(id).exec();
     if (!result) {
       throw new NotFoundException(`Genus with ID ${id} not found`);

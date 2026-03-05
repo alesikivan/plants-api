@@ -6,6 +6,7 @@ import { CreateVarietyDto } from './dto/create-variety.dto';
 import { UpdateVarietyDto } from './dto/update-variety.dto';
 import { AiService, PlantNameSuggestion } from '../ai/ai.service';
 import { GenusService } from '../genus/genus.service';
+import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
 
 export interface ValidateVarietyResult {
   suggestion: PlantNameSuggestion;
@@ -15,6 +16,7 @@ export interface ValidateVarietyResult {
 export class VarietyService {
   constructor(
     @InjectModel(Variety.name) private varietyModel: Model<VarietyDocument>,
+    @InjectModel(Plant.name) private plantModel: Model<PlantDocument>,
     private aiService: AiService,
     private genusService: GenusService,
   ) {}
@@ -95,6 +97,11 @@ export class VarietyService {
   }
 
   async remove(id: string): Promise<void> {
+    const plantsCount = await this.plantModel.countDocuments({ varietyId: id }).exec();
+    if (plantsCount > 0) {
+      throw new ConflictException('Нельзя удалить сорт: есть растения, связанные с этим сортом');
+    }
+
     const result = await this.varietyModel.findByIdAndDelete(id).exec();
     if (!result) {
       throw new NotFoundException(`Variety with ID ${id} not found`);

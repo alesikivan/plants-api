@@ -5,10 +5,14 @@ import { VarietyController } from './variety.controller';
 import { Variety, VarietySchema } from './schemas/variety.schema';
 import { AiModule } from '../ai/ai.module';
 import { GenusModule } from '../genus/genus.module';
+import { Plant, PlantSchema } from '../plants/schemas/plant.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Variety.name, schema: VarietySchema }]),
+    MongooseModule.forFeature([
+      { name: Variety.name, schema: VarietySchema },
+      { name: Plant.name, schema: PlantSchema },
+    ]),
     AiModule,
     GenusModule,
   ],
