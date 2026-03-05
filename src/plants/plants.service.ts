@@ -59,6 +59,7 @@ export class PlantsService {
     const plantData: any = {
       ...createPlantDto,
       userId,
+      sortOrder: 0,
     };
 
     if (file) {
@@ -68,6 +69,12 @@ export class PlantsService {
 
     const plant = new this.plantModel(plantData);
     await plant.save();
+
+    // Shift all existing plants' sortOrder up by 1
+    await this.plantModel.updateMany(
+      { userId, _id: { $ne: plant._id } },
+      { $inc: { sortOrder: 1 } }
+    );
 
     // Синхронизация обратных связей: добавить plant._id в полки
     if (createPlantDto.shelfIds?.length > 0) {
