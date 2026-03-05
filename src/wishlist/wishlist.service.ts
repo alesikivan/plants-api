@@ -2,8 +2,25 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Wishlist, WishlistDocument } from './schemas/wishlist.schema';
+
+function buildCaseInsensitiveRegex(term: string): RegExp {
+  const pattern = term
+    .split('')
+    .map((char) => {
+      const lower = char.toLowerCase();
+      const upper = char.toUpperCase();
+      if (lower === upper) {
+        return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }
+      return `[${lower}${upper}]`;
+    })
+    .join('');
+  return new RegExp(pattern);
+}
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
+import { Genus, GenusDocument } from '../genus/schemas/genus.schema';
+import { Variety, VarietyDocument } from '../variety/schemas/variety.schema';
 import * as fs from 'fs';
 import { compressImage } from '../common/utils/compress-image';
 
@@ -11,6 +28,8 @@ import { compressImage } from '../common/utils/compress-image';
 export class WishlistService {
   constructor(
     @InjectModel(Wishlist.name) private wishlistModel: Model<WishlistDocument>,
+    @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
+    @InjectModel(Variety.name) private varietyModel: Model<VarietyDocument>,
   ) {}
 
   async create(
@@ -34,9 +53,39 @@ export class WishlistService {
     return wishlist;
   }
 
-  async findAll(userId: string): Promise<Wishlist[]> {
+  async findAll(
+    userId: string,
+    search?: string,
+    genusId?: string,
+    varietyId?: string,
+  ): Promise<Wishlist[]> {
+    const query: any = { userId };
+
+    if (genusId) {
+      query.genusId = genusId;
+    }
+
+    if (varietyId) {
+      query.varietyId = varietyId;
+    }
+
+    if (search) {
+      const regex = buildCaseInsensitiveRegex(search.trim());
+      const nameQuery = { $or: [{ nameRu: regex }, { nameEn: regex }] };
+      const [matchingGenus, matchingVarieties] = await Promise.all([
+        this.genusModel.find(nameQuery).select('_id').exec(),
+        this.varietyModel.find(nameQuery).select('_id').exec(),
+      ]);
+      const genusIds = matchingGenus.map((g) => g._id.toString());
+      const varietyIds = matchingVarieties.map((v) => v._id.toString());
+      query.$or = [
+        { genusId: { $in: genusIds } },
+        { varietyId: { $in: varietyIds } },
+      ];
+    }
+
     return await this.wishlistModel
-      .find({ userId })
+      .find(query)
       .populate('genusId')
       .populate('varietyId')
       .sort({ createdAt: -1 })

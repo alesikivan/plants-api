@@ -12,6 +12,7 @@ import {
   UploadedFile,
   Res,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { WishlistService } from './wishlist.service';
@@ -50,8 +51,13 @@ export class WishlistController {
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.wishlistService.findAll(req.user._id);
+  findAll(
+    @Request() req,
+    @Query('search') search?: string,
+    @Query('genusId') genusId?: string,
+    @Query('varietyId') varietyId?: string,
+  ) {
+    return this.wishlistService.findAll(req.user._id, search, genusId, varietyId);
   }
 
   @Get(':id')

@@ -2,6 +2,21 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Shelf, ShelfDocument } from './schemas/shelf.schema';
+
+function buildCaseInsensitiveRegex(term: string): RegExp {
+  const pattern = term
+    .split('')
+    .map((char) => {
+      const lower = char.toLowerCase();
+      const upper = char.toUpperCase();
+      if (lower === upper) {
+        return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }
+      return `[${lower}${upper}]`;
+    })
+    .join('');
+  return new RegExp(pattern);
+}
 import { CreateShelfDto } from './dto/create-shelf.dto';
 import { UpdateShelfDto } from './dto/update-shelf.dto';
 import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
@@ -34,9 +49,14 @@ export class ShelvesService {
     return await shelf.save();
   }
 
-  async findAll(userId: string): Promise<any[]> {
+  async findAll(userId: string, search?: string): Promise<any[]> {
+    const query: any = { userId };
+    if (search) {
+      query.name = buildCaseInsensitiveRegex(search.trim());
+    }
+
     const shelves = await this.shelfModel
-      .find({ userId })
+      .find(query)
       .sort({ createdAt: -1 })
       .exec();
 

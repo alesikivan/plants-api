@@ -13,6 +13,7 @@ import {
   UploadedFile,
   Res,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ShelvesService } from './shelves.service';
@@ -54,8 +55,8 @@ export class ShelvesController {
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.shelvesService.findAll(req.user._id);
+  findAll(@Request() req, @Query('search') search?: string) {
+    return this.shelvesService.findAll(req.user._id, search);
   }
 
   @Get('admin/all')
