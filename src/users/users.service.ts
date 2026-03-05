@@ -176,7 +176,7 @@ export class UsersService {
 
   async findAll(): Promise<UserDocument[]> {
     // Admin listing should include blocked users as well.
-    return this.userModel.find().exec();
+    return this.userModel.find().sort({ createdAt: -1 }).exec();
   }
 
   async updateProfile(userId: string, updateUserDto: UpdateUserDto): Promise<UserDocument> {
@@ -207,7 +207,7 @@ export class UsersService {
       };
     }
 
-    const users = await this.userModel.find(filter).exec();
+    const users = await this.userModel.find(filter).sort({ createdAt: -1 }).exec();
 
     // Получаем статистику для каждого пользователя
     const usersWithStats = await Promise.all(
