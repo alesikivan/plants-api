@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Plant, PlantDocument } from './schemas/plant.schema';
+import { PlantHistory, PlantHistoryDocument } from './schemas/plant-history.schema';
 import { Shelf, ShelfDocument } from '../shelves/schemas/shelf.schema';
 import { Genus, GenusDocument } from '../genus/schemas/genus.schema';
 import { Variety, VarietyDocument } from '../variety/schemas/variety.schema';
@@ -44,6 +45,7 @@ function buildCaseInsensitiveRegex(term: string): RegExp {
 export class PlantsService {
   constructor(
     @InjectModel(Plant.name) private plantModel: Model<PlantDocument>,
+    @InjectModel(PlantHistory.name) private plantHistoryModel: Model<PlantHistoryDocument>,
     @InjectModel(Shelf.name) private shelfModel: Model<ShelfDocument>,
     @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
     @InjectModel(Variety.name) private varietyModel: Model<VarietyDocument>,
@@ -229,6 +231,20 @@ export class PlantsService {
         fs.unlinkSync(photoPath);
       }
     }
+
+    // Удалить историю растения и все её фотографии
+    const historyEntries = await this.plantHistoryModel.find({ plantId: id }).exec();
+    for (const entry of historyEntries) {
+      if (entry.photos && entry.photos.length > 0) {
+        entry.photos.forEach(photo => {
+          const photoPath = `./uploads/plant-history/${photo}`;
+          if (fs.existsSync(photoPath)) {
+            fs.unlinkSync(photoPath);
+          }
+        });
+      }
+    }
+    await this.plantHistoryModel.deleteMany({ plantId: id }).exec();
   }
 
   async archive(id: string, userId: string): Promise<Plant> {
