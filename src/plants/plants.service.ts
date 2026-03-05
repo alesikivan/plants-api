@@ -117,8 +117,18 @@ export class PlantsService {
       .find(query)
       .populate('genusId')
       .populate('varietyId')
-      .sort({ createdAt: -1 })
+      .sort({ sortOrder: 1, createdAt: -1 })
       .exec();
+  }
+
+  async reorder(ids: string[], userId: string): Promise<void> {
+    const bulkOps = ids.map((id, index) => ({
+      updateOne: {
+        filter: { _id: id, userId },
+        update: { $set: { sortOrder: index } },
+      },
+    }));
+    await this.plantModel.bulkWrite(bulkOps);
   }
 
   async findOne(id: string, userId: string): Promise<Plant> {

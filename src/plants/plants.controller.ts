@@ -111,6 +111,11 @@ export class PlantsController {
     return this.plantsService.findOne(id, req.user._id);
   }
 
+  @Patch('reorder')
+  reorder(@Body() body: { ids: string[] }, @Request() req) {
+    return this.plantsService.reorder(body.ids, req.user._id);
+  }
+
   @Patch(':id')
   @UseInterceptors(
     FileInterceptor(

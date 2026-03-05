@@ -389,7 +389,7 @@ export class UsersService {
       .find({ userId: user._id, isArchived: { $ne: true } })
       .populate('genusId')
       .populate('varietyId')
-      .sort({ createdAt: -1 })
+      .sort({ sortOrder: 1, createdAt: -1 })
       .exec();
   }
 

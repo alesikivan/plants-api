@@ -29,6 +29,9 @@ export class Plant {
   @Prop({ default: false })
   isArchived: boolean;
 
+  @Prop({ default: 0 })
+  sortOrder: number;
+
   createdAt: Date;
   updatedAt: Date;
 }
