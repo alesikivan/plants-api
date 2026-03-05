@@ -1,8 +1,10 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class RegisterDto {
   @IsEmail()
   @IsNotEmpty()
+  @Transform(({ value }) => value?.trim())
   email: string;
 
   @IsString()
@@ -12,5 +14,7 @@ export class RegisterDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(30)
+  @Transform(({ value }) => value?.trim().replace(/\s+/g, ' '))
   name: string;
 }

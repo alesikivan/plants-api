@@ -1,9 +1,11 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsEnum, IsOptional } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, IsEnum, IsOptional } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { Role } from '../../common/enums/role.enum';
 
 export class CreateUserDto {
   @IsEmail()
   @IsNotEmpty()
+  @Transform(({ value }) => value?.trim())
   email: string;
 
   @IsString()
@@ -13,6 +15,8 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(30)
+  @Transform(({ value }) => value?.trim().replace(/\s+/g, ' '))
   name: string;
 
   @IsEnum(Role)
