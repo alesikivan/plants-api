@@ -175,7 +175,7 @@ export class UsersService {
   }
 
   async findAll(): Promise<UserDocument[]> {
-    return this.userModel.find().exec();
+    return this.userModel.find({ isBlocked: { $ne: true } }).exec();
   }
 
   async updateProfile(userId: string, updateUserDto: UpdateUserDto): Promise<UserDocument> {
@@ -197,10 +197,11 @@ export class UsersService {
   }
 
   async searchUsers(query?: string): Promise<UserProfileWithStatsDto[]> {
-    let filter = {};
+    let filter: Record<string, any> = { isBlocked: { $ne: true } };
 
     if (query && query.trim()) {
       filter = {
+        ...filter,
         name: { $regex: query.trim(), $options: 'i' }
       };
     }
@@ -239,7 +240,7 @@ export class UsersService {
   async getUserProfileWithStats(userId: string): Promise<UserProfileWithStatsDto> {
     const user = await this.userModel.findById(userId).exec();
 
-    if (!user) {
+    if (!user || user.isBlocked) {
       throw new NotFoundException('Пользователь не найден');
     }
 

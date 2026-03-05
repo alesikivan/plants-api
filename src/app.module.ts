@@ -12,6 +12,7 @@ import { VarietyModule } from './variety/variety.module';
 import { PlantsModule } from './plants/plants.module';
 import { ShelvesModule } from './shelves/shelves.module';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -34,6 +35,7 @@ import { AppController } from './app.controller';
     PlantsModule,
     ShelvesModule,
     WishlistModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [
