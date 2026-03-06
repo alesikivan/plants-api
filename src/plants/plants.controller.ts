@@ -106,6 +106,18 @@ export class PlantsController {
     return this.plantHistoryService.adminRemove(id);
   }
 
+  @Public()
+  @Get('public/:id')
+  getPublicPlant(@Param('id') id: string) {
+    return this.plantsService.findOnePublic(id);
+  }
+
+  @Public()
+  @Get('public/:id/history')
+  getPublicPlantHistory(@Param('id') id: string) {
+    return this.plantsService.findPublicHistory(id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     return this.plantsService.findOne(id, req.user._id);

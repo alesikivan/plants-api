@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsEnum, IsOptional, IsBoolean, MaxLength } from 'class-validator';
+import { IsEmail, IsString, IsEnum, IsOptional, IsBoolean, MaxLength, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { Role } from '../../common/enums/role.enum';
 
@@ -10,6 +10,7 @@ export class AdminUpdateUserDto {
 
   @IsString()
   @IsOptional()
+  @MinLength(5)
   @MaxLength(30)
   @Transform(({ value }) => value?.trim().replace(/\s+/g, ' '))
   name?: string;

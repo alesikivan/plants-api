@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Plant, PlantDocument } from './schemas/plant.schema';
@@ -6,6 +6,7 @@ import { PlantHistory, PlantHistoryDocument } from './schemas/plant-history.sche
 import { Shelf, ShelfDocument } from '../shelves/schemas/shelf.schema';
 import { Genus, GenusDocument } from '../genus/schemas/genus.schema';
 import { Variety, VarietyDocument } from '../variety/schemas/variety.schema';
+import { User, UserDocument } from '../users/schemas/user.schema';
 import { CreatePlantDto } from './dto/create-plant.dto';
 import { UpdatePlantDto } from './dto/update-plant.dto';
 import * as fs from 'fs';
@@ -49,6 +50,7 @@ export class PlantsService {
     @InjectModel(Shelf.name) private shelfModel: Model<ShelfDocument>,
     @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
     @InjectModel(Variety.name) private varietyModel: Model<VarietyDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
   async create(
@@ -331,5 +333,70 @@ export class PlantsService {
         fs.unlinkSync(photoPath);
       }
     }
+  }
+
+  async findOnePublic(id: string): Promise<Plant & { showPlantHistory: boolean; owner?: { _id: string; name: string } }> {
+    const plant = await this.plantModel
+      .findOne({ _id: id, isArchived: { $ne: true } })
+      .populate('genusId')
+      .populate('varietyId')
+      .populate('shelfIds')
+      .exec();
+
+    if (!plant) {
+      throw new NotFoundException(`Растение не найдено`);
+    }
+
+    // Check if owner allows showing plants
+    const owner = await this.userModel.findById(plant.userId).exec();
+    if (!owner) {
+      throw new NotFoundException(`Растение не найдено`);
+    }
+
+    if (!(owner.showPlants ?? true)) {
+      // Return 404 instead of 403 to avoid confirming plant existence
+      throw new NotFoundException(`Растение не найдено`);
+    }
+
+    // Return plant data with showPlantHistory flag and owner info
+    return {
+      ...(plant.toObject ? plant.toObject() : plant),
+      showPlantHistory: owner.showPlantHistory ?? true,
+      owner: {
+        _id: owner._id.toString(),
+        name: owner.name,
+      },
+    };
+  }
+
+  async findPublicHistory(plantId: string): Promise<PlantHistory[]> {
+    const plant = await this.plantModel
+      .findOne({ _id: plantId, isArchived: { $ne: true } })
+      .exec();
+
+    if (!plant) {
+      throw new NotFoundException(`Растение не найдено`);
+    }
+
+    // Check if owner allows showing plants
+    const owner = await this.userModel.findById(plant.userId).exec();
+    if (!owner) {
+      throw new NotFoundException(`Растение не найдено`);
+    }
+
+    if (!(owner.showPlants ?? true)) {
+      // Return 404 instead of 403 to avoid confirming plant existence
+      throw new NotFoundException(`Растение не найдено`);
+    }
+
+    if (!(owner.showPlantHistory ?? true)) {
+      // Return 404 instead of 403 to avoid confirming plant/history existence
+      throw new NotFoundException(`Растение не найдено`);
+    }
+
+    return this.plantHistoryModel
+      .find({ plantId, userId: plant.userId })
+      .sort({ date: -1 })
+      .exec();
   }
 }
