@@ -13,6 +13,7 @@ import { PlantsModule } from './plants/plants.module';
 import { ShelvesModule } from './shelves/shelves.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { FollowsModule } from './follows/follows.module';
+import { FeedModule } from './feed/feed.module';
 import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 
@@ -37,6 +38,7 @@ import { AppController } from './app.controller';
     ShelvesModule,
     WishlistModule,
     FollowsModule,
+    FeedModule,
     AdminModule,
   ],
   controllers: [AppController],
