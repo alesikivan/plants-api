@@ -157,10 +157,22 @@ export class FeedService {
 
     const results = await this.plantModel.aggregate([
       { $match: initialMatch },
+      // Normalize userId to ObjectId (may be stored as string)
+      {
+        $addFields: {
+          userIdObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$userId' }, 'string'] },
+              then: { $toObjectId: '$userId' },
+              else: '$userId',
+            },
+          },
+        },
+      },
       {
         $lookup: {
           from: 'users',
-          localField: 'userId',
+          localField: 'userIdObj',
           foreignField: '_id',
           as: 'userDoc',
         },
@@ -259,10 +271,29 @@ export class FeedService {
 
     const results = await this.plantHistoryModel.aggregate([
       { $match: initialMatch },
+      // Normalize userId and plantId to ObjectId (may be stored as string)
+      {
+        $addFields: {
+          userIdObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$userId' }, 'string'] },
+              then: { $toObjectId: '$userId' },
+              else: '$userId',
+            },
+          },
+          plantIdObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$plantId' }, 'string'] },
+              then: { $toObjectId: '$plantId' },
+              else: '$plantId',
+            },
+          },
+        },
+      },
       {
         $lookup: {
           from: 'users',
-          localField: 'userId',
+          localField: 'userIdObj',
           foreignField: '_id',
           as: 'userDoc',
         },
@@ -278,7 +309,7 @@ export class FeedService {
       {
         $lookup: {
           from: 'plants',
-          localField: 'plantId',
+          localField: 'plantIdObj',
           foreignField: '_id',
           as: 'plantDoc',
         },
