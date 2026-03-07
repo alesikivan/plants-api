@@ -248,7 +248,10 @@ export class UsersService {
     }
 
     // Подсчитываем количество растений пользователя
-    const totalPlants = await this.plantModel.countDocuments({ userId: user._id }).exec();
+    const totalPlants = await this.plantModel.countDocuments({
+      userId: user._id,
+      isArchived: { $ne: true },
+    }).exec();
 
     // Подсчитываем количество полок пользователя
     const totalShelves = await this.shelfModel.countDocuments({ userId: user._id }).exec();
