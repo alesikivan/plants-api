@@ -1,6 +1,6 @@
 import { Injectable, ConflictException, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -14,6 +14,7 @@ import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
 import { Shelf, ShelfDocument } from '../shelves/schemas/shelf.schema';
 import { PlantHistory, PlantHistoryDocument } from '../plants/schemas/plant-history.schema';
 import { Wishlist, WishlistDocument } from '../wishlist/schemas/wishlist.schema';
+import { Follow, FollowDocument } from '../follows/schemas/follow.schema';
 import { Role } from '../common/enums/role.enum';
 import { compressImage } from '../common/utils/compress-image';
 import { FILE_UPLOAD_CONFIG } from '../config/file-upload.config';
@@ -26,6 +27,7 @@ export class UsersService {
     @InjectModel(Shelf.name) private shelfModel: Model<ShelfDocument>,
     @InjectModel(PlantHistory.name) private plantHistoryModel: Model<PlantHistoryDocument>,
     @InjectModel(Wishlist.name) private wishlistModel: Model<WishlistDocument>,
+    @InjectModel(Follow.name) private followModel: Model<FollowDocument>,
   ) {}
 
   private validateSocialLinks(socialLinks: any[]): void {
@@ -374,6 +376,7 @@ export class UsersService {
       this.plantHistoryModel.deleteMany({ userId: user._id }).exec(),
       this.shelfModel.deleteMany({ userId: user._id }).exec(),
       this.wishlistModel.deleteMany({ userId: user._id }).exec(),
+      this.followModel.deleteMany({ $or: [{ followerId: new Types.ObjectId(userId) }, { followingId: new Types.ObjectId(userId) }] }).exec(),
     ]);
 
     await this.userModel.findByIdAndDelete(userId).exec();

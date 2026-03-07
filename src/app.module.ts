@@ -12,6 +12,7 @@ import { VarietyModule } from './variety/variety.module';
 import { PlantsModule } from './plants/plants.module';
 import { ShelvesModule } from './shelves/shelves.module';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { FollowsModule } from './follows/follows.module';
 import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 
@@ -35,6 +36,7 @@ import { AppController } from './app.controller';
     PlantsModule,
     ShelvesModule,
     WishlistModule,
+    FollowsModule,
     AdminModule,
   ],
   controllers: [AppController],

@@ -7,6 +7,7 @@ import { Plant, PlantSchema } from '../plants/schemas/plant.schema';
 import { Shelf, ShelfSchema } from '../shelves/schemas/shelf.schema';
 import { PlantHistory, PlantHistorySchema } from '../plants/schemas/plant-history.schema';
 import { Wishlist, WishlistSchema } from '../wishlist/schemas/wishlist.schema';
+import { Follow, FollowSchema } from '../follows/schemas/follow.schema';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { Wishlist, WishlistSchema } from '../wishlist/schemas/wishlist.schema';
       { name: Shelf.name, schema: ShelfSchema },
       { name: PlantHistory.name, schema: PlantHistorySchema },
       { name: Wishlist.name, schema: WishlistSchema },
+      { name: Follow.name, schema: FollowSchema },
     ]),
   ],
   controllers: [UsersController],
