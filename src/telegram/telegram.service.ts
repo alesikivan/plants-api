@@ -54,4 +54,67 @@ export class TelegramService {
       `email: ${email}`,
     );
   }
+
+  private userLink(userId: string, username: string): string {
+    const base = this.configService.get<string>('frontendUrl') || '';
+    return `<a href="${base}/profile/${userId}">${username}</a>`;
+  }
+
+  private plantLink(plantId: string, genusName: string): string {
+    const base = this.configService.get<string>('frontendUrl') || '';
+    return `<a href="${base}/plants/${plantId}">${genusName}</a>`;
+  }
+
+  private shelfLink(shelfId: string, shelfName: string): string {
+    const base = this.configService.get<string>('frontendUrl') || '';
+    return `<a href="${base}/shelves/${shelfId}">${shelfName}</a>`;
+  }
+
+  async notifyPlantCreated(userId: string, username: string, plantId: string, genusName: string): Promise<void> {
+    await this.sendMessage(
+      `<b>🌱 Новое растение добавлено</b>\n` +
+      `Пользователь: ${this.userLink(userId, username)}\n` +
+      `Растение: ${this.plantLink(plantId, genusName)}`,
+    );
+  }
+
+  async notifyPlantUpdated(userId: string, username: string, plantId: string, genusName: string): Promise<void> {
+    await this.sendMessage(
+      `<b>✏️ Растение обновлено</b>\n` +
+      `Пользователь: ${this.userLink(userId, username)}\n` +
+      `Растение: ${this.plantLink(plantId, genusName)}`,
+    );
+  }
+
+  async notifyHistoryCreated(userId: string, username: string, plantId: string, genusName: string): Promise<void> {
+    await this.sendMessage(
+      `<b>📖 Добавлена запись в историю растения</b>\n` +
+      `Пользователь: ${this.userLink(userId, username)}\n` +
+      `Растение: ${this.plantLink(plantId, genusName)}`,
+    );
+  }
+
+  async notifyHistoryUpdated(userId: string, username: string, plantId: string, genusName: string): Promise<void> {
+    await this.sendMessage(
+      `<b>✏️ История растения обновлена</b>\n` +
+      `Пользователь: ${this.userLink(userId, username)}\n` +
+      `Растение: ${this.plantLink(plantId, genusName)}`,
+    );
+  }
+
+  async notifyShelfCreated(userId: string, username: string, shelfId: string, shelfName: string): Promise<void> {
+    await this.sendMessage(
+      `<b>🗄 Новая полка создана</b>\n` +
+      `Пользователь: ${this.userLink(userId, username)}\n` +
+      `Полка: ${this.shelfLink(shelfId, shelfName)}`,
+    );
+  }
+
+  async notifyShelfUpdated(userId: string, username: string, shelfId: string, shelfName: string): Promise<void> {
+    await this.sendMessage(
+      `<b>✏️ Полка обновлена</b>\n` +
+      `Пользователь: ${this.userLink(userId, username)}\n` +
+      `Полка: ${this.shelfLink(shelfId, shelfName)}`,
+    );
+  }
 }

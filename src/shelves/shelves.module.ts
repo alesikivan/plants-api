@@ -4,9 +4,11 @@ import { ShelvesService } from './shelves.service';
 import { ShelvesController } from './shelves.controller';
 import { Shelf, ShelfSchema } from './schemas/shelf.schema';
 import { Plant, PlantSchema } from '../plants/schemas/plant.schema';
+import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
   imports: [
+    TelegramModule,
     MongooseModule.forFeature([
       { name: Shelf.name, schema: ShelfSchema },
       { name: Plant.name, schema: PlantSchema },

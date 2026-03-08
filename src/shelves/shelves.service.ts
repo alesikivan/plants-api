@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Shelf, ShelfDocument } from './schemas/shelf.schema';
+import { TelegramService } from '../telegram/telegram.service';
 
 function buildCaseInsensitiveRegex(term: string): RegExp {
   const pattern = term
@@ -28,12 +29,14 @@ export class ShelvesService {
   constructor(
     @InjectModel(Shelf.name) private shelfModel: Model<ShelfDocument>,
     @InjectModel(Plant.name) private plantModel: Model<PlantDocument>,
+    private readonly telegramService: TelegramService,
   ) {}
 
   async create(
     createShelfDto: CreateShelfDto,
     file: Express.Multer.File | undefined,
     userId: string,
+    username?: string,
   ): Promise<Shelf> {
     const shelfData: any = {
       ...createShelfDto,
@@ -46,7 +49,13 @@ export class ShelvesService {
     }
 
     const shelf = new this.shelfModel(shelfData);
-    return await shelf.save();
+    const saved = await shelf.save();
+
+    if (username) {
+      this.telegramService.notifyShelfCreated(userId, username, String(saved._id), createShelfDto.name).catch(() => {});
+    }
+
+    return saved;
   }
 
   async findAll(userId: string, search?: string): Promise<any[]> {
@@ -153,6 +162,7 @@ export class ShelvesService {
     updateShelfDto: UpdateShelfDto,
     file: Express.Multer.File | undefined,
     userId: string,
+    username?: string,
   ): Promise<Shelf> {
     const existingShelf = await this.shelfModel.findOne({ _id: id, userId }).exec();
 
@@ -188,6 +198,11 @@ export class ShelvesService {
     const shelf = await this.shelfModel
       .findOneAndUpdate({ _id: id, userId }, updateData, { new: true })
       .exec();
+
+    if (username && shelf) {
+      const shelfName = shelf.name || existingShelf.name;
+      this.telegramService.notifyShelfUpdated(userId, username, String(shelf._id), shelfName).catch(() => {});
+    }
 
     return shelf;
   }

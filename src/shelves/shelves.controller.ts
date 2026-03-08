@@ -51,7 +51,7 @@ export class ShelvesController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req,
   ) {
-    return this.shelvesService.create(createShelfDto, file, req.user._id);
+    return this.shelvesService.create(createShelfDto, file, req.user._id, req.user.name);
   }
 
   @Get()
@@ -94,7 +94,7 @@ export class ShelvesController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req,
   ) {
-    return this.shelvesService.update(id, updateShelfDto, file, req.user._id);
+    return this.shelvesService.update(id, updateShelfDto, file, req.user._id, req.user.name);
   }
 
   @Public()

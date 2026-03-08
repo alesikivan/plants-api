@@ -3,17 +3,21 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PlantHistory, PlantHistoryDocument } from './schemas/plant-history.schema';
 import { Plant, PlantDocument } from './schemas/plant.schema';
+import { Genus, GenusDocument } from '../genus/schemas/genus.schema';
 import { CreatePlantHistoryDto } from './dto/create-plant-history.dto';
 import { UpdatePlantHistoryDto } from './dto/update-plant-history.dto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { compressImage } from '../common/utils/compress-image';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class PlantHistoryService {
   constructor(
     @InjectModel(PlantHistory.name) private plantHistoryModel: Model<PlantHistoryDocument>,
     @InjectModel(Plant.name) private plantModel: Model<PlantDocument>,
+    @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
+    private readonly telegramService: TelegramService,
   ) {}
 
   async create(
@@ -21,6 +25,7 @@ export class PlantHistoryService {
     createPlantHistoryDto: CreatePlantHistoryDto,
     files: Express.Multer.File[] | undefined,
     userId: string,
+    username?: string,
   ): Promise<PlantHistory> {
     // Проверяем, что растение существует и принадлежит пользователю
     const plant = await this.plantModel.findOne({ _id: plantId, userId }).exec();
@@ -50,6 +55,12 @@ export class PlantHistoryService {
 
     const history = new this.plantHistoryModel(historyData);
     await history.save();
+
+    if (username) {
+      const genus = await this.genusModel.findById(plant.genusId).select('nameRu nameEn').lean();
+      const genusName = genus?.nameRu || genus?.nameEn || String(plant.genusId);
+      this.telegramService.notifyHistoryCreated(userId, username, plantId, genusName).catch(() => {});
+    }
 
     return history;
   }
@@ -85,6 +96,7 @@ export class PlantHistoryService {
     updatePlantHistoryDto: UpdatePlantHistoryDto,
     files: Express.Multer.File[] | undefined,
     userId: string,
+    username?: string,
   ): Promise<PlantHistory> {
     const existingHistory = await this.plantHistoryModel
       .findOne({ _id: historyId, plantId, userId })
@@ -130,6 +142,13 @@ export class PlantHistoryService {
         { new: true }
       )
       .exec();
+
+    if (username) {
+      const plant = await this.plantModel.findById(plantId).select('genusId').lean();
+      const genus = plant ? await this.genusModel.findById(plant.genusId).select('nameRu nameEn').lean() : null;
+      const genusName = genus?.nameRu || genus?.nameEn || plantId;
+      this.telegramService.notifyHistoryUpdated(userId, username, plantId, genusName).catch(() => {});
+    }
 
     return history;
   }

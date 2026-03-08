@@ -57,7 +57,7 @@ export class PlantsController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req,
   ) {
-    return this.plantsService.create(createPlantDto, file, req.user._id);
+    return this.plantsService.create(createPlantDto, file, req.user._id, req.user.name);
   }
 
   @Get()
@@ -144,7 +144,7 @@ export class PlantsController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req,
   ) {
-    return this.plantsService.update(id, updatePlantDto, file, req.user._id);
+    return this.plantsService.update(id, updatePlantDto, file, req.user._id, req.user.name);
   }
 
   @Public()
@@ -198,6 +198,7 @@ export class PlantsController {
       createPlantHistoryDto,
       files,
       req.user._id,
+      req.user.name,
     );
   }
 
@@ -240,6 +241,7 @@ export class PlantsController {
       updatePlantHistoryDto,
       files,
       req.user._id,
+      req.user.name,
     );
   }
 

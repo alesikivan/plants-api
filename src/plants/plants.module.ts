@@ -9,9 +9,11 @@ import { Shelf, ShelfSchema } from '../shelves/schemas/shelf.schema';
 import { Genus, GenusSchema } from '../genus/schemas/genus.schema';
 import { Variety, VarietySchema } from '../variety/schemas/variety.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
   imports: [
+    TelegramModule,
     MongooseModule.forFeature([
       { name: Plant.name, schema: PlantSchema },
       { name: PlantHistory.name, schema: PlantHistorySchema },

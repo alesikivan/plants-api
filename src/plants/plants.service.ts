@@ -11,6 +11,7 @@ import { CreatePlantDto } from './dto/create-plant.dto';
 import { UpdatePlantDto } from './dto/update-plant.dto';
 import * as fs from 'fs';
 import { compressImage } from '../common/utils/compress-image';
+import { TelegramService } from '../telegram/telegram.service';
 
 export interface PlantFilterDto {
   search?: string;
@@ -51,12 +52,14 @@ export class PlantsService {
     @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
     @InjectModel(Variety.name) private varietyModel: Model<VarietyDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private readonly telegramService: TelegramService,
   ) {}
 
   async create(
     createPlantDto: CreatePlantDto,
     file: Express.Multer.File | undefined,
     userId: string,
+    username?: string,
   ): Promise<Plant> {
     const plantData: any = {
       ...createPlantDto,
@@ -84,6 +87,12 @@ export class PlantsService {
         { _id: { $in: createPlantDto.shelfIds }, userId },
         { $addToSet: { plantIds: plant._id } }
       );
+    }
+
+    if (username) {
+      const genus = await this.genusModel.findById(plant.genusId).select('nameRu nameEn').lean();
+      const genusName = genus?.nameRu || genus?.nameEn || String(plant.genusId);
+      this.telegramService.notifyPlantCreated(userId, username, String(plant._id), genusName).catch(() => {});
     }
 
     return plant;
@@ -160,6 +169,7 @@ export class PlantsService {
     updatePlantDto: UpdatePlantDto,
     file: Express.Multer.File | undefined,
     userId: string,
+    username?: string,
   ): Promise<Plant> {
     const existingPlant = await this.plantModel.findOne({ _id: id, userId }).exec();
 
@@ -226,6 +236,12 @@ export class PlantsService {
       .populate('genusId')
       .populate('varietyId')
       .exec();
+
+    if (username && plant) {
+      const populated = plant.genusId as any;
+      const genusName = populated?.nameRu || populated?.nameEn || String(plant.genusId);
+      this.telegramService.notifyPlantUpdated(userId, username, String(plant._id), genusName).catch(() => {});
+    }
 
     return plant;
   }
