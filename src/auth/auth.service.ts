@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { MailerService } from '../mailer/mailer.service';
+import { TelegramService } from '../telegram/telegram.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
@@ -21,6 +22,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private mailerService: MailerService,
+    private telegramService: TelegramService,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
@@ -37,6 +39,8 @@ export class AuthService {
       // Log email send failure but don't fail registration
       console.error('Failed to send verification email:', err);
     }
+
+    this.telegramService.notifyUserRegistered(user.name, user.email).catch(() => {});
 
     return { requiresVerification: true };
   }
@@ -76,6 +80,7 @@ export class AuthService {
       throw new BadRequestException('Недействительная или просроченная ссылка подтверждения');
     }
     await this.usersService.markEmailVerified(user._id.toString());
+    this.telegramService.notifyEmailVerified(user.name, user.email).catch(() => {});
   }
 
   async resendVerification(email: string): Promise<void> {

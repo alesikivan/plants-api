@@ -26,6 +26,10 @@ export default () => {
     openai: {
       apiKey: process.env.OPENAI_API_KEY,
     },
+    telegram: {
+      botToken: process.env.TELEGRAM_BOT_TOKEN,
+      chatId: process.env.TELEGRAM_CHAT_ID,
+    },
     smtp: {
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT, 10) || 587,
