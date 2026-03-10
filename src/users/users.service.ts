@@ -79,6 +79,18 @@ export class UsersService {
     return socialLinks.filter(link => link.isPublic === true);
   }
 
+  private canBypassPrivacy(targetUser: UserDocument, requester?: UserDocument | null): boolean {
+    if (!requester) {
+      return false;
+    }
+
+    if (requester.role === Role.ADMIN) {
+      return true;
+    }
+
+    return requester._id?.toString() === targetUser._id.toString();
+  }
+
   async create(createUserDto: CreateUserDto, skipVerification = false): Promise<{ user: UserDocument; verificationToken: string | null }> {
     const existingUser = await this.userModel.findOne({ email: createUserDto.email });
     if (existingUser) {
@@ -214,8 +226,12 @@ export class UsersService {
     // Получаем статистику для каждого пользователя
     const usersWithStats = await Promise.all(
       users.map(async (user) => {
-        const totalPlants = await this.plantModel.countDocuments({ userId: user._id, isArchived: { $ne: true } }).exec();
-        const totalShelves = await this.shelfModel.countDocuments({ userId: user._id }).exec();
+        const totalPlants = user.showPlants === false
+          ? 0
+          : await this.plantModel.countDocuments({ userId: user._id, isArchived: { $ne: true } }).exec();
+        const totalShelves = user.showShelves === false
+          ? 0
+          : await this.shelfModel.countDocuments({ userId: user._id }).exec();
 
         return new UserProfileWithStatsDto({
           id: user._id.toString(),
@@ -240,21 +256,27 @@ export class UsersService {
     return usersWithStats;
   }
 
-  async getUserProfileWithStats(userId: string): Promise<UserProfileWithStatsDto> {
+  async getUserProfileWithStats(userId: string, requester?: UserDocument | null): Promise<UserProfileWithStatsDto> {
     const user = await this.userModel.findById(userId).exec();
 
     if (!user || user.isBlocked) {
       throw new NotFoundException('Пользователь не найден');
     }
 
+    const canBypassPrivacy = this.canBypassPrivacy(user, requester);
+
     // Подсчитываем количество растений пользователя
-    const totalPlants = await this.plantModel.countDocuments({
-      userId: user._id,
-      isArchived: { $ne: true },
-    }).exec();
+    const totalPlants = canBypassPrivacy || user.showPlants !== false
+      ? await this.plantModel.countDocuments({
+          userId: user._id,
+          isArchived: { $ne: true },
+        }).exec()
+      : 0;
 
     // Подсчитываем количество полок пользователя
-    const totalShelves = await this.shelfModel.countDocuments({ userId: user._id }).exec();
+    const totalShelves = canBypassPrivacy || user.showShelves !== false
+      ? await this.shelfModel.countDocuments({ userId: user._id }).exec()
+      : 0;
 
     return new UserProfileWithStatsDto({
       id: user._id.toString(),
@@ -385,12 +407,12 @@ export class UsersService {
     await this.userModel.findByIdAndDelete(userId).exec();
   }
 
-  async getUserPlants(userId: string, requesterRole?: Role): Promise<Plant[]> {
+  async getUserPlants(userId: string, requester?: UserDocument | null): Promise<Plant[]> {
     const user = await this.userModel.findById(userId).exec();
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
     }
-    if (requesterRole !== Role.ADMIN && !(user.showPlants ?? true)) {
+    if (!this.canBypassPrivacy(user, requester) && !(user.showPlants ?? true)) {
       throw new ForbiddenException('Пользователь скрыл свою коллекцию растений');
     }
     return this.plantModel
@@ -401,12 +423,12 @@ export class UsersService {
       .exec();
   }
 
-  async getUserPlant(userId: string, plantId: string, requesterRole?: Role): Promise<Plant> {
+  async getUserPlant(userId: string, plantId: string, requester?: UserDocument | null): Promise<Plant> {
     const user = await this.userModel.findById(userId).exec();
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
     }
-    if (requesterRole !== Role.ADMIN && !(user.showPlants ?? true)) {
+    if (!this.canBypassPrivacy(user, requester) && !(user.showPlants ?? true)) {
       throw new ForbiddenException('Пользователь скрыл свою коллекцию растений');
     }
     const plant = await this.plantModel
@@ -421,12 +443,12 @@ export class UsersService {
     return plant;
   }
 
-  async getUserPlantHistory(userId: string, plantId: string, requesterRole?: Role): Promise<PlantHistory[]> {
+  async getUserPlantHistory(userId: string, plantId: string, requester?: UserDocument | null): Promise<PlantHistory[]> {
     const user = await this.userModel.findById(userId).exec();
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
     }
-    if (requesterRole !== Role.ADMIN && !(user.showPlantHistory ?? true)) {
+    if (!this.canBypassPrivacy(user, requester) && !(user.showPlantHistory ?? true)) {
       throw new ForbiddenException('Пользователь скрыл историю своих растений');
     }
     const plant = await this.plantModel.findOne({ _id: plantId, userId: user._id, isArchived: { $ne: true } }).exec();
@@ -442,12 +464,12 @@ export class UsersService {
     return docs as unknown as PlantHistory[];
   }
 
-  async getUserShelves(userId: string, requesterRole?: Role): Promise<any[]> {
+  async getUserShelves(userId: string, requester?: UserDocument | null): Promise<any[]> {
     const user = await this.userModel.findById(userId).exec();
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
     }
-    if (requesterRole !== Role.ADMIN && !(user.showShelves ?? true)) {
+    if (!this.canBypassPrivacy(user, requester) && !(user.showShelves ?? true)) {
       throw new ForbiddenException('Пользователь скрыл свои полки');
     }
     const shelves = await this.shelfModel
@@ -470,12 +492,12 @@ export class UsersService {
     );
   }
 
-  async getUserShelf(userId: string, shelfId: string, requesterRole?: Role): Promise<any> {
+  async getUserShelf(userId: string, shelfId: string, requester?: UserDocument | null): Promise<any> {
     const user = await this.userModel.findById(userId).exec();
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
     }
-    if (requesterRole !== Role.ADMIN && !(user.showShelves ?? true)) {
+    if (!this.canBypassPrivacy(user, requester) && !(user.showShelves ?? true)) {
       throw new ForbiddenException('Пользователь скрыл свои полки');
     }
     const shelf = await this.shelfModel.findOne({ _id: shelfId, userId: user._id }).exec();

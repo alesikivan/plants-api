@@ -11,6 +11,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
+import { OptionalAuth } from '../auth/decorators/optional-auth.decorator';
 import { Role } from '../common/enums/role.enum';
 import { UserDocument } from './schemas/user.schema';
 import { FILE_UPLOAD_CONFIG, createImageUploadOptions } from '../config/file-upload.config';
@@ -28,13 +29,18 @@ export class UsersController {
   }
 
   @Get('search')
+  @OptionalAuth()
   async searchUsers(@Query('q') query?: string): Promise<UserProfileWithStatsDto[]> {
     return this.usersService.searchUsers(query);
   }
 
   @Get(':id/profile')
-  async getUserProfile(@Param('id') id: string): Promise<UserProfileWithStatsDto> {
-    return this.usersService.getUserProfileWithStats(id);
+  @OptionalAuth()
+  async getUserProfile(
+    @Param('id') id: string,
+    @CurrentUser() requester?: UserDocument,
+  ): Promise<UserProfileWithStatsDto> {
+    return this.usersService.getUserProfileWithStats(id, requester);
   }
 
   @Patch('profile')
@@ -82,46 +88,51 @@ export class UsersController {
   }
 
   @Get(':userId/plants')
+  @OptionalAuth()
   async getUserPlants(
     @Param('userId') userId: string,
-    @CurrentUser() requester: UserDocument,
+    @CurrentUser() requester?: UserDocument,
   ) {
-    return this.usersService.getUserPlants(userId, requester.role);
+    return this.usersService.getUserPlants(userId, requester);
   }
 
   @Get(':userId/plants/:plantId/history')
+  @OptionalAuth()
   async getUserPlantHistory(
     @Param('userId') userId: string,
     @Param('plantId') plantId: string,
-    @CurrentUser() requester: UserDocument,
+    @CurrentUser() requester?: UserDocument,
   ) {
-    return this.usersService.getUserPlantHistory(userId, plantId, requester.role);
+    return this.usersService.getUserPlantHistory(userId, plantId, requester);
   }
 
   @Get(':userId/plants/:plantId')
+  @OptionalAuth()
   async getUserPlant(
     @Param('userId') userId: string,
     @Param('plantId') plantId: string,
-    @CurrentUser() requester: UserDocument,
+    @CurrentUser() requester?: UserDocument,
   ) {
-    return this.usersService.getUserPlant(userId, plantId, requester.role);
+    return this.usersService.getUserPlant(userId, plantId, requester);
   }
 
   @Get(':userId/shelves')
+  @OptionalAuth()
   async getUserShelves(
     @Param('userId') userId: string,
-    @CurrentUser() requester: UserDocument,
+    @CurrentUser() requester?: UserDocument,
   ) {
-    return this.usersService.getUserShelves(userId, requester.role);
+    return this.usersService.getUserShelves(userId, requester);
   }
 
   @Get(':userId/shelves/:shelfId')
+  @OptionalAuth()
   async getUserShelf(
     @Param('userId') userId: string,
     @Param('shelfId') shelfId: string,
-    @CurrentUser() requester: UserDocument,
+    @CurrentUser() requester?: UserDocument,
   ) {
-    return this.usersService.getUserShelf(userId, shelfId, requester.role);
+    return this.usersService.getUserShelf(userId, shelfId, requester);
   }
 
   @Get()
