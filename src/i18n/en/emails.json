@@ -1,0 +1,20 @@
+{
+  "verification": {
+    "subject": "Verify your PlantSheep email",
+    "heading": "Welcome to PlantSheep!",
+    "intro": "To complete your registration, please verify your email address by clicking the button below:",
+    "buttonText": "Verify Email",
+    "linkText": "Or copy and paste this link:",
+    "validity": "This link is valid for 24 hours.",
+    "ignoreText": "If you didn't sign up for PlantSheep, please ignore this email."
+  },
+  "passwordReset": {
+    "subject": "Reset your PlantSheep password",
+    "heading": "Password Reset for PlantSheep",
+    "intro": "You requested a password reset. Click the button below to create a new password:",
+    "buttonText": "Reset Password",
+    "linkText": "Or copy and paste this link:",
+    "validity": "This link is valid for 1 hour.",
+    "ignoreText": "If you didn't request a password reset, please ignore this email."
+  }
+}

@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, IsEnum, IsOptional } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, IsEnum, IsOptional, IsIn } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { Role } from '../../common/enums/role.enum';
 
@@ -23,4 +23,8 @@ export class CreateUserDto {
   @IsEnum(Role)
   @IsOptional()
   role?: Role;
+
+  @IsOptional()
+  @IsIn(['ru', 'en'])
+  preferredLanguage?: string;
 }

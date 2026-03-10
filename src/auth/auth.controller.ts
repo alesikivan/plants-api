@@ -108,11 +108,11 @@ export class AuthController {
   @Post('clear-session')
   @Public()
   @HttpCode(HttpStatus.OK)
-  clearSession(@Res({ passthrough: true }) response: Response): { message: string } {
+  async clearSession(@Res({ passthrough: true }) response: Response): Promise<{ message: string }> {
     const clearOptions = getClearCookieOptions();
     response.clearCookie('accessToken', clearOptions);
     response.clearCookie('refreshToken', clearOptions);
-    return { message: this.i18n.translate('auth.messages.sessionCleared') };
+    return { message: await this.i18n.translate('auth.messages.sessionCleared') };
   }
 
   // Helper method to set auth cookies

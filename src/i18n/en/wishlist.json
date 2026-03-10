@@ -1,0 +1,9 @@
+{
+  "errors": {
+    "notFound": "Wishlist item not found",
+    "photoNotFound": "Photo not found",
+    "deleteFailed": "Failed to delete wishlist item",
+    "updateFailed": "Failed to update wishlist item",
+    "createFailed": "Failed to create wishlist item"
+  }
+}

@@ -64,7 +64,6 @@ import { AppController } from './app.controller';
     },
     {
       provide: APP_PIPE,
-      useClass: I18nValidationPipe,
       useValue: new I18nValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,

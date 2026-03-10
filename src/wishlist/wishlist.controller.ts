@@ -15,6 +15,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { I18nService } from 'nestjs-i18n';
 import { WishlistService } from './wishlist.service';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
@@ -30,7 +31,10 @@ import * as fs from 'fs';
 @Controller('wishlist')
 @UseGuards(JwtAuthGuard)
 export class WishlistController {
-  constructor(private readonly wishlistService: WishlistService) {}
+  constructor(
+    private readonly wishlistService: WishlistService,
+    private readonly i18n: I18nService,
+  ) {}
 
   @Post()
   @UseInterceptors(
@@ -90,7 +94,9 @@ export class WishlistController {
     const filePath = `./uploads/wishlist/${filename}`;
 
     if (!fs.existsSync(filePath)) {
-      throw new NotFoundException('Photo not found');
+      throw new NotFoundException(
+        await this.i18n.translate('wishlist.errors.photoNotFound')
+      );
     }
 
     return res.sendFile(filename, { root: './uploads/wishlist' });

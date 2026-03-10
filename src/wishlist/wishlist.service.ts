@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { I18nService } from 'nestjs-i18n';
 import { Wishlist, WishlistDocument } from './schemas/wishlist.schema';
 
 function buildCaseInsensitiveRegex(term: string): RegExp {
@@ -30,6 +31,7 @@ export class WishlistService {
     @InjectModel(Wishlist.name) private wishlistModel: Model<WishlistDocument>,
     @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
     @InjectModel(Variety.name) private varietyModel: Model<VarietyDocument>,
+    private readonly i18n: I18nService,
   ) {}
 
   async create(
@@ -100,7 +102,9 @@ export class WishlistService {
       .exec();
 
     if (!wishlist) {
-      throw new NotFoundException(`Wishlist item with ID ${id} not found`);
+      throw new NotFoundException(
+        await this.i18n.translate('wishlist.errors.notFound')
+      );
     }
 
     return wishlist;
@@ -115,7 +119,9 @@ export class WishlistService {
     const existingWishlist = await this.wishlistModel.findOne({ _id: id, userId }).exec();
 
     if (!existingWishlist) {
-      throw new NotFoundException(`Wishlist item with ID ${id} not found`);
+      throw new NotFoundException(
+        await this.i18n.translate('wishlist.errors.notFound')
+      );
     }
 
     const updateData: any = { ...updateWishlistDto };
@@ -161,7 +167,9 @@ export class WishlistService {
     const result = await this.wishlistModel.findOneAndDelete({ _id: id, userId }).exec();
 
     if (!result) {
-      throw new NotFoundException(`Wishlist item with ID ${id} not found`);
+      throw new NotFoundException(
+        await this.i18n.translate('wishlist.errors.notFound')
+      );
     }
 
     // Delete photo if exists

@@ -35,7 +35,12 @@ export class AuthService {
 
     try {
       if (verificationToken) {
-        await this.mailerService.sendVerificationEmail(user.email, verificationToken, frontendUrl);
+        await this.mailerService.sendVerificationEmail(
+          user.email,
+          verificationToken,
+          frontendUrl,
+          user.preferredLanguage,
+        );
       }
     } catch (err) {
       // Log email send failure but don't fail registration
@@ -99,7 +104,12 @@ export class AuthService {
     const frontendUrl = this.configService.get<string>('frontendUrl') || process.env.FRONTEND_URL;
 
     try {
-      await this.mailerService.sendVerificationEmail(user.email, token, frontendUrl);
+      await this.mailerService.sendVerificationEmail(
+        user.email,
+        token,
+        frontendUrl,
+        user.preferredLanguage,
+      );
     } catch (err) {
       console.error('Failed to resend verification email:', err);
     }
@@ -140,7 +150,12 @@ export class AuthService {
       const token = await this.usersService.setPasswordResetToken(user._id.toString());
       const frontendUrl = this.configService.get<string>('frontendUrl') || process.env.FRONTEND_URL;
       try {
-        await this.mailerService.sendPasswordResetEmail(email, token, frontendUrl);
+        await this.mailerService.sendPasswordResetEmail(
+          email,
+          token,
+          frontendUrl,
+          user.preferredLanguage,
+        );
       } catch (err) {
         console.error('Failed to send password reset email:', err);
       }
