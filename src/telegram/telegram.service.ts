@@ -60,21 +60,21 @@ export class TelegramService {
     return `<a href="${base}/profile/${userId}">${username}</a>`;
   }
 
-  private plantLink(plantId: string, genusName: string): string {
+  private plantLink(plantId: string, genusName: string, userId: string): string {
     const base = this.configService.get<string>('frontendUrl') || '';
-    return `<a href="${base}/plants/${plantId}">${genusName}</a>`;
+    return `<a href="${base}/profile/${userId}/plants/${plantId}">${genusName}</a>`;
   }
 
-  private shelfLink(shelfId: string, shelfName: string): string {
+  private shelfLink(shelfId: string, shelfName: string, userId: string): string {
     const base = this.configService.get<string>('frontendUrl') || '';
-    return `<a href="${base}/shelves/${shelfId}">${shelfName}</a>`;
+    return `<a href="${base}/profile/${userId}shelves/${shelfId}">${shelfName}</a>`;
   }
 
   async notifyPlantCreated(userId: string, username: string, plantId: string, genusName: string): Promise<void> {
     await this.sendMessage(
       `<b>🌱 Новое растение добавлено</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
-      `Растение: ${this.plantLink(plantId, genusName)}`,
+      `Растение: ${this.plantLink(plantId, genusName, userId)}`,
     );
   }
 
@@ -82,7 +82,7 @@ export class TelegramService {
     await this.sendMessage(
       `<b>✏️ Растение обновлено</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
-      `Растение: ${this.plantLink(plantId, genusName)}`,
+      `Растение: ${this.plantLink(plantId, genusName, userId)}`,
     );
   }
 
@@ -90,7 +90,7 @@ export class TelegramService {
     await this.sendMessage(
       `<b>📖 Добавлена запись в историю растения</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
-      `Растение: ${this.plantLink(plantId, genusName)}`,
+      `Растение: ${this.plantLink(plantId, genusName, userId)}`,
     );
   }
 
@@ -98,7 +98,7 @@ export class TelegramService {
     await this.sendMessage(
       `<b>✏️ История растения обновлена</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
-      `Растение: ${this.plantLink(plantId, genusName)}`,
+      `Растение: ${this.plantLink(plantId, genusName, userId)}`,
     );
   }
 
@@ -106,7 +106,7 @@ export class TelegramService {
     await this.sendMessage(
       `<b>🗄 Новая полка создана</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
-      `Полка: ${this.shelfLink(shelfId, shelfName)}`,
+      `Полка: ${this.shelfLink(shelfId, shelfName, userId)}`,
     );
   }
 
@@ -114,7 +114,18 @@ export class TelegramService {
     await this.sendMessage(
       `<b>✏️ Полка обновлена</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
-      `Полка: ${this.shelfLink(shelfId, shelfName)}`,
+      `Полка: ${this.shelfLink(shelfId, shelfName, userId)}`,
+    );
+  }
+
+  async notifyAiRecognition(userId: string, username: string, type: 'genus' | 'variety', query: string, suggestion: { nameRu: string; nameEn: string }): Promise<void> {
+    const emoji = type === 'genus' ? '🔍' : '🔬';
+    const typeLabel = type === 'genus' ? 'Род' : 'Сорт';
+    await this.sendMessage(
+      `<b>${emoji} ИИ распознавание - ${typeLabel}</b>\n` +
+      `Пользователь: ${this.userLink(userId, username)}\n` +
+      `Запрос: <code>${query}</code>\n` +
+      `Результат: ${suggestion.nameRu} / ${suggestion.nameEn}`,
     );
   }
 }

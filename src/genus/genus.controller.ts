@@ -14,6 +14,8 @@ import { CreateGenusDto } from './dto/create-genus.dto';
 import { UpdateGenusDto } from './dto/update-genus.dto';
 import { ValidateGenusDto } from './dto/validate-genus.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserDocument } from '../users/schemas/user.schema';
 
 @Controller('genus')
 @UseGuards(JwtAuthGuard)
@@ -26,8 +28,8 @@ export class GenusController {
   }
 
   @Post('validate')
-  validate(@Body() validateGenusDto: ValidateGenusDto) {
-    return this.genusService.validate(validateGenusDto.query);
+  validate(@Body() validateGenusDto: ValidateGenusDto, @CurrentUser() user: UserDocument) {
+    return this.genusService.validate(validateGenusDto.query, user);
   }
 
   @Get()

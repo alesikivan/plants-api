@@ -14,6 +14,8 @@ import { CreateVarietyDto } from './dto/create-variety.dto';
 import { UpdateVarietyDto } from './dto/update-variety.dto';
 import { ValidateVarietyDto } from './dto/validate-variety.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserDocument } from '../users/schemas/user.schema';
 
 @Controller('variety')
 @UseGuards(JwtAuthGuard)
@@ -26,8 +28,8 @@ export class VarietyController {
   }
 
   @Post('validate')
-  validate(@Body() validateVarietyDto: ValidateVarietyDto) {
-    return this.varietyService.validate(validateVarietyDto.query, validateVarietyDto.genusId);
+  validate(@Body() validateVarietyDto: ValidateVarietyDto, @CurrentUser() user: UserDocument) {
+    return this.varietyService.validate(validateVarietyDto.query, validateVarietyDto.genusId, user);
   }
 
   @Get()

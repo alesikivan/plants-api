@@ -6,6 +6,8 @@ import { CreateGenusDto } from './dto/create-genus.dto';
 import { UpdateGenusDto } from './dto/update-genus.dto';
 import { AiService, PlantNameSuggestion } from '../ai/ai.service';
 import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
+import { TelegramService } from '../telegram/telegram.service';
+import { UserDocument } from '../users/schemas/user.schema';
 
 export interface ValidateGenusResult {
   suggestion: PlantNameSuggestion;
@@ -17,6 +19,7 @@ export class GenusService {
     @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
     @InjectModel(Plant.name) private plantModel: Model<PlantDocument>,
     private aiService: AiService,
+    private telegramService: TelegramService,
   ) {}
 
   async create(createGenusDto: CreateGenusDto): Promise<Genus> {
@@ -83,11 +86,23 @@ export class GenusService {
     }
   }
 
-  async validate(query: string): Promise<ValidateGenusResult> {
+  async validate(query: string, user?: UserDocument): Promise<ValidateGenusResult> {
     const suggestion = await this.aiService.suggestPlantName(query, 'genus');
     if (!suggestion) {
       throw new ServiceUnavailableException('AI validation is not available');
     }
+
+    // Log AI recognition to Telegram
+    if (user) {
+      this.telegramService.notifyAiRecognition(
+        user._id.toString(),
+        user.name,
+        'genus',
+        query,
+        suggestion,
+      ).catch(() => {});
+    }
+
     return { suggestion };
   }
 }
