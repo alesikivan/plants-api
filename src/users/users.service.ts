@@ -10,6 +10,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { UserProfileWithStatsDto } from './dto/user-profile-with-stats.dto';
+import { SeoSitemapItemDto, SeoSitemapUserDto } from './dto/seo-sitemap.dto';
 import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
 import { Shelf, ShelfDocument } from '../shelves/schemas/shelf.schema';
 import { PlantHistory, PlantHistoryDocument } from '../plants/schemas/plant-history.schema';
@@ -254,6 +255,82 @@ export class UsersService {
     );
 
     return usersWithStats;
+  }
+
+  async getSeoSitemap(): Promise<SeoSitemapUserDto[]> {
+    const users = await this.userModel
+      .find({ isBlocked: { $ne: true } })
+      .select('_id updatedAt showPlants showShelves')
+      .sort({ createdAt: 1 })
+      .lean()
+      .exec();
+
+    const userIdsWithPlants = users
+      .filter((user) => user.showPlants !== false)
+      .map((user) => user._id);
+    const userIdsWithShelves = users
+      .filter((user) => user.showShelves !== false)
+      .map((user) => user._id);
+
+    const [plants, shelves] = await Promise.all([
+      userIdsWithPlants.length > 0
+        ? this.plantModel
+            .find({
+              userId: { $in: userIdsWithPlants },
+              isArchived: { $ne: true },
+            })
+            .select('_id userId updatedAt')
+            .lean()
+            .exec()
+        : [],
+      userIdsWithShelves.length > 0
+        ? this.shelfModel
+            .find({
+              userId: { $in: userIdsWithShelves },
+            })
+            .select('_id userId updatedAt')
+            .lean()
+            .exec()
+        : [],
+    ]);
+
+    const plantsByUserId = new Map<string, SeoSitemapItemDto[]>();
+    for (const plant of plants) {
+      const userId = plant.userId.toString();
+      const items = plantsByUserId.get(userId) ?? [];
+      items.push(
+        new SeoSitemapItemDto({
+          id: plant._id.toString(),
+          updatedAt: plant.updatedAt,
+        }),
+      );
+      plantsByUserId.set(userId, items);
+    }
+
+    const shelvesByUserId = new Map<string, SeoSitemapItemDto[]>();
+    for (const shelf of shelves) {
+      const userId = shelf.userId.toString();
+      const items = shelvesByUserId.get(userId) ?? [];
+      items.push(
+        new SeoSitemapItemDto({
+          id: shelf._id.toString(),
+          updatedAt: shelf.updatedAt,
+        }),
+      );
+      shelvesByUserId.set(userId, items);
+    }
+
+    return users.map(
+      (user) =>
+        new SeoSitemapUserDto({
+          id: user._id.toString(),
+          updatedAt: user.updatedAt,
+          showPlants: user.showPlants ?? true,
+          showShelves: user.showShelves ?? true,
+          plants: plantsByUserId.get(user._id.toString()) ?? [],
+          shelves: shelvesByUserId.get(user._id.toString()) ?? [],
+        }),
+    );
   }
 
   async getUserProfileWithStats(userId: string, requester?: UserDocument | null): Promise<UserProfileWithStatsDto> {

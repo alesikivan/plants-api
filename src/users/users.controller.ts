@@ -3,6 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { UserResponseDto } from './dto/user-response.dto';
 import { UserProfileWithStatsDto } from './dto/user-profile-with-stats.dto';
+import { SeoSitemapUserDto } from './dto/seo-sitemap.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
@@ -32,6 +33,12 @@ export class UsersController {
   @OptionalAuth()
   async searchUsers(@Query('q') query?: string): Promise<UserProfileWithStatsDto[]> {
     return this.usersService.searchUsers(query);
+  }
+
+  @Get('seo/sitemap')
+  @Public()
+  async getSeoSitemap(): Promise<SeoSitemapUserDto[]> {
+    return this.usersService.getSeoSitemap();
   }
 
   @Get(':id/profile')
