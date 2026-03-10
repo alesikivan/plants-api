@@ -1,0 +1,14 @@
+{
+  "auth": {
+    "emailInvalid": "Введите корректный email",
+    "emailRequired": "Email обязателен",
+    "passwordString": "Пароль должен быть строкой",
+    "passwordRequired": "Пароль обязателен",
+    "passwordMinLength": "Пароль должен содержать минимум {constraints.0} символов",
+    "nameString": "Имя должно быть строкой",
+    "nameRequired": "Имя обязательно",
+    "nameMinLength": "Имя должно содержать минимум {constraints.0} символов",
+    "nameMaxLength": "Имя должно содержать не более {constraints.0} символов",
+    "tokenString": "Токен должен быть строкой"
+  }
+}

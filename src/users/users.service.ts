@@ -19,6 +19,7 @@ import { Follow, FollowDocument } from '../follows/schemas/follow.schema';
 import { Role } from '../common/enums/role.enum';
 import { compressImage } from '../common/utils/compress-image';
 import { FILE_UPLOAD_CONFIG } from '../config/file-upload.config';
+import { I18nService } from 'nestjs-i18n';
 
 @Injectable()
 export class UsersService {
@@ -29,6 +30,7 @@ export class UsersService {
     @InjectModel(PlantHistory.name) private plantHistoryModel: Model<PlantHistoryDocument>,
     @InjectModel(Wishlist.name) private wishlistModel: Model<WishlistDocument>,
     @InjectModel(Follow.name) private followModel: Model<FollowDocument>,
+    private i18n: I18nService,
   ) {}
 
   private validateSocialLinks(socialLinks: any[]): void {
@@ -92,15 +94,18 @@ export class UsersService {
     return requester._id?.toString() === targetUser._id.toString();
   }
 
-  async create(createUserDto: CreateUserDto, skipVerification = false): Promise<{ user: UserDocument; verificationToken: string | null }> {
+  async create(
+    createUserDto: CreateUserDto,
+    skipVerification = false,
+  ): Promise<{ user: UserDocument; verificationToken: string | null }> {
     const existingUser = await this.userModel.findOne({ email: createUserDto.email });
     if (existingUser) {
-      throw new ConflictException('Пользователь с таким email уже существует');
+      throw new ConflictException(await this.i18n.translate('auth.errors.userExistsByEmail'));
     }
 
     const existingName = await this.userModel.findOne({ name: createUserDto.name });
     if (existingName) {
-      throw new ConflictException('Пользователь с таким именем уже существует');
+      throw new ConflictException(await this.i18n.translate('auth.errors.userExistsByName'));
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);

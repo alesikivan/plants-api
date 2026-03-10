@@ -2,7 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import * as path from 'path';
+import {
+  AcceptLanguageResolver,
+  I18nJsonLoader,
+  I18nModule,
+  I18nValidationPipe,
+} from 'nestjs-i18n';
 import configuration from './config/configuration';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AuthModule } from './auth/auth.module';
@@ -22,6 +28,15 @@ import { AppController } from './app.controller';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
+    }),
+    I18nModule.forRoot({
+      fallbackLanguage: 'ru',
+      loader: I18nJsonLoader,
+      loaderOptions: {
+        path: path.join(__dirname, '/i18n/'),
+        watch: true,
+      },
+      resolvers: [AcceptLanguageResolver],
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
@@ -49,8 +64,8 @@ import { AppController } from './app.controller';
     },
     {
       provide: APP_PIPE,
-      useClass: ValidationPipe,
-      useValue: new ValidationPipe({
+      useClass: I18nValidationPipe,
+      useValue: new I18nValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,

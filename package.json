@@ -30,6 +30,7 @@
     "class-validator": "^0.14.0",
     "cookie-parser": "^1.4.7",
     "mongoose": "^8.0.3",
+    "nestjs-i18n": "^10.6.0",
     "nodemailer": "^8.0.1",
     "openai": "^6.25.0",
     "passport": "^0.7.0",

@@ -12,15 +12,17 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { UserDocument } from '../users/schemas/user.schema';
 import { getAuthCookieOptions, getClearCookieOptions } from './cookie.config';
+import { I18nService } from 'nestjs-i18n';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly i18n: I18nService,
+  ) {}
 
   @Post('register')
-  async register(
-    @Body() registerDto: RegisterDto,
-  ): Promise<{ requiresVerification: true }> {
+  async register(@Body() registerDto: RegisterDto): Promise<{ requiresVerification: true }> {
     return this.authService.register(registerDto);
   }
 
@@ -28,7 +30,7 @@ export class AuthController {
   @Get('verify-email')
   async verifyEmail(@Query('token') token: string): Promise<{ message: string }> {
     await this.authService.verifyEmail(token);
-    return { message: 'Email успешно подтверждён' };
+    return { message: await this.i18n.translate('auth.messages.emailVerified') };
   }
 
   @Public()
@@ -36,7 +38,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async resendVerification(@Body() body: { email: string }): Promise<{ message: string }> {
     await this.authService.resendVerification(body.email);
-    return { message: 'Если аккаунт существует, письмо отправлено' };
+    return { message: await this.i18n.translate('auth.messages.verificationEmailSentIfExists') };
   }
 
   @Public()
@@ -82,7 +84,7 @@ export class AuthController {
     // Update only access token in cookie
     response.cookie('accessToken', result.accessToken, getAuthCookieOptions('access'));
 
-    return { message: 'Token refreshed successfully' };
+    return { message: await this.i18n.translate('auth.messages.tokenRefreshed') };
   }
 
   @Post('logout')
@@ -99,7 +101,7 @@ export class AuthController {
     response.clearCookie('accessToken', clearOptions);
     response.clearCookie('refreshToken', clearOptions);
 
-    return { message: 'Logout successful' };
+    return { message: await this.i18n.translate('auth.messages.logoutSuccess') };
   }
 
   // Public endpoint to clear session cookies (used when session is invalidated on client side)
@@ -110,7 +112,7 @@ export class AuthController {
     const clearOptions = getClearCookieOptions();
     response.clearCookie('accessToken', clearOptions);
     response.clearCookie('refreshToken', clearOptions);
-    return { message: 'Session cleared' };
+    return { message: this.i18n.translate('auth.messages.sessionCleared') };
   }
 
   // Helper method to set auth cookies

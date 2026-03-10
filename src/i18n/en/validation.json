@@ -1,0 +1,14 @@
+{
+  "auth": {
+    "emailInvalid": "Enter a valid email address",
+    "emailRequired": "Email is required",
+    "passwordString": "Password must be a string",
+    "passwordRequired": "Password is required",
+    "passwordMinLength": "Password must be at least {constraints.0} characters long",
+    "nameString": "Name must be a string",
+    "nameRequired": "Name is required",
+    "nameMinLength": "Name must be at least {constraints.0} characters long",
+    "nameMaxLength": "Name must be no more than {constraints.0} characters long",
+    "tokenString": "Token must be a string"
+  }
+}
