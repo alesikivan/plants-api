@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { I18nService, I18nContext } from 'nestjs-i18n';
 import { Follow, FollowDocument } from './schemas/follow.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 
@@ -26,16 +27,27 @@ export class FollowsService {
   constructor(
     @InjectModel(Follow.name) private followModel: Model<FollowDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private i18n: I18nService,
   ) {}
 
   async follow(followerId: string, followingId: string): Promise<void> {
     if (followerId === followingId) {
-      throw new BadRequestException('Нельзя подписаться на самого себя');
+      const follower = await this.userModel.findById(followerId).exec();
+      const lang = follower?.preferredLanguage || 'ru';
+      const message = await this.i18n.translate('follows.errors.cannotFollowYourself', {
+        lang,
+      });
+      throw new BadRequestException(message);
     }
 
     const targetUser = await this.userModel.findById(followingId).exec();
     if (!targetUser || targetUser.isBlocked) {
-      throw new NotFoundException('Пользователь не найден');
+      const follower = await this.userModel.findById(followerId).exec();
+      const lang = follower?.preferredLanguage || 'ru';
+      const message = await this.i18n.translate('follows.errors.userNotFound', {
+        lang,
+      });
+      throw new NotFoundException(message);
     }
 
     try {

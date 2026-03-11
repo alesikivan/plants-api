@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "cannotFollowYourself": "Нельзя подписаться на самого себя",
+    "userNotFound": "Пользователь не найден"
+  }
+}

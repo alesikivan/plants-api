@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "cannotFollowYourself": "Cannot follow yourself",
+    "userNotFound": "User not found"
+  }
+}

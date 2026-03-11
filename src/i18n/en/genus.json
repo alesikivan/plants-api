@@ -1,0 +1,8 @@
+{
+  "errors": {
+    "alreadyExists": "This genus already exists",
+    "cannotDelete": "Cannot delete genus: there are plants associated with this genus",
+    "notFound": "Genus not found",
+    "aiUnavailable": "AI validation is not available"
+  }
+}
