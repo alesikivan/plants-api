@@ -67,7 +67,7 @@ export class TelegramService {
 
   private shelfLink(shelfId: string, shelfName: string, userId: string): string {
     const base = this.configService.get<string>('frontendUrl') || '';
-    return `<a href="${base}/profile/${userId}shelves/${shelfId}">${shelfName}</a>`;
+    return `<a href="${base}/profile/${userId}/shelves/${shelfId}">${shelfName}</a>`;
   }
 
   async notifyPlantCreated(userId: string, username: string, plantId: string, genusName: string): Promise<void> {
