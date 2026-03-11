@@ -5,11 +5,11 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserDocument } from '../users/schemas/user.schema';
 
 @Controller('follows')
-@UseGuards(JwtAuthGuard)
 export class FollowsController {
   constructor(private readonly followsService: FollowsService) {}
 
   @Post(':userId')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async follow(
     @Param('userId') userId: string,
@@ -19,6 +19,7 @@ export class FollowsController {
   }
 
   @Delete(':userId')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async unfollow(
     @Param('userId') userId: string,
@@ -30,9 +31,9 @@ export class FollowsController {
   @Get(':userId/stats')
   async getStats(
     @Param('userId') userId: string,
-    @CurrentUser() currentUser: UserDocument,
+    @CurrentUser() currentUser?: UserDocument,
   ): Promise<FollowStatsDto> {
-    return this.followsService.getStats(userId, currentUser._id.toString());
+    return this.followsService.getStats(userId, currentUser?._id.toString());
   }
 
   @Get(':userId/followers')
