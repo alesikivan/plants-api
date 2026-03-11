@@ -238,6 +238,7 @@ export class UsersService {
         const totalShelves = user.showShelves === false
           ? 0
           : await this.shelfModel.countDocuments({ userId: user._id }).exec();
+        const followersCount = await this.followModel.countDocuments({ followingId: new Types.ObjectId(user._id.toString()) }).exec();
 
         return new UserProfileWithStatsDto({
           id: user._id.toString(),
@@ -254,6 +255,7 @@ export class UsersService {
           stats: {
             totalPlants,
             totalShelves,
+            followersCount,
           },
         });
       })
@@ -360,6 +362,8 @@ export class UsersService {
       ? await this.shelfModel.countDocuments({ userId: user._id }).exec()
       : 0;
 
+    const followersCount = await this.followModel.countDocuments({ followingId: new Types.ObjectId(user._id.toString()) }).exec();
+
     return new UserProfileWithStatsDto({
       id: user._id.toString(),
       name: user.name,
@@ -375,6 +379,7 @@ export class UsersService {
       stats: {
         totalPlants,
         totalShelves,
+        followersCount,
       },
     });
   }

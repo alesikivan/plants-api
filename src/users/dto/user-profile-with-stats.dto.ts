@@ -15,6 +15,7 @@ export class UserProfileWithStatsDto {
   stats: {
     totalPlants: number;
     totalShelves: number;
+    followersCount: number;
   };
 
   constructor(data: Partial<UserProfileWithStatsDto>) {
