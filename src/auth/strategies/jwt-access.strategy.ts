@@ -28,16 +28,10 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt-access') 
   async validate(payload: JwtPayload): Promise<UserDocument> {
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
-      const message = await this.i18n.translate('auth.errors.invalidToken', {
-        lang: I18nContext.current().getLanguage(),
-      });
-      throw new UnauthorizedException(message);
+      throw new UnauthorizedException('Invalid Token');
     }
     if (user.isBlocked) {
-      const message = await this.i18n.translate('auth.errors.accountBlocked', {
-        lang: I18nContext.current().getLanguage(),
-      });
-      throw new ForbiddenException(message);
+      throw new ForbiddenException('Account has been blocked');
     }
     return user;
   }
