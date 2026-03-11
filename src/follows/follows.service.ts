@@ -140,6 +140,15 @@ export class FollowsService {
     return { items, total: totalArr[0]?.count ?? 0 };
   }
 
+  async getPublicStats(userId: string): Promise<{ followersCount: number; followingCount: number }> {
+    const userOid = new Types.ObjectId(userId);
+    const [followersCount, followingCount] = await Promise.all([
+      this.followModel.countDocuments({ followingId: userOid }).exec(),
+      this.followModel.countDocuments({ followerId: userOid }).exec(),
+    ]);
+    return { followersCount, followingCount };
+  }
+
   async getFollowers(userId: string, q?: string, page = 1, limit = 20): Promise<FollowListDto> {
     return this.paginateFollows('followingId', 'followerId', userId, q, page, limit);
   }

@@ -29,11 +29,19 @@ export class FollowsController {
   }
 
   @Get(':userId/stats')
+  @UseGuards(JwtAuthGuard)
   async getStats(
     @Param('userId') userId: string,
-    @CurrentUser() currentUser?: UserDocument,
+    @CurrentUser() currentUser: UserDocument,
   ): Promise<FollowStatsDto> {
-    return this.followsService.getStats(userId, currentUser?._id.toString());
+    return this.followsService.getStats(userId, currentUser._id.toString());
+  }
+
+  @Get(':userId/public-stats')
+  async getPublicStats(
+    @Param('userId') userId: string,
+  ): Promise<{ followersCount: number; followingCount: number }> {
+    return this.followsService.getPublicStats(userId);
   }
 
   @Get(':userId/followers')

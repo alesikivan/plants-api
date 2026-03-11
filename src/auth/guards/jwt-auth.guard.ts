@@ -32,7 +32,7 @@ export class JwtAuthGuard extends AuthGuard('jwt-access') {
         throw err;
       }
 
-      return (user ?? null) as TUser;
+      return (user || null) as TUser;
     }
 
     if (err) {
