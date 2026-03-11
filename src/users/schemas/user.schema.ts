@@ -60,6 +60,9 @@ export class User {
   @Prop({ type: Date, default: null })
   passwordResetExpires?: Date;
 
+  @Prop({ type: String, default: null, maxlength: 80 })
+  bio?: string;
+
   @Prop({
     type: [
       {

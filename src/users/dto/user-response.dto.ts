@@ -11,6 +11,7 @@ export class UserResponseDto {
   showShelves: boolean;
   showPlantHistory: boolean;
   isBlocked: boolean;
+  bio?: string;
   avatar?: string;
   socialLinks?: SocialLink[];
   createdAt: Date;

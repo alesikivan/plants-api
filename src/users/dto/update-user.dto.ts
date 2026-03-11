@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsBoolean, IsArray, ValidateNested, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsBoolean, IsArray, ValidateNested, IsString, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SocialLinkDto {
@@ -13,6 +13,11 @@ export class SocialLinkDto {
 }
 
 export class UpdateUserDto {
+  @IsString()
+  @MaxLength(80)
+  @IsOptional()
+  bio?: string;
+
   @IsEnum(['ru', 'en'])
   @IsOptional()
   preferredLanguage?: string;
