@@ -1,4 +1,5 @@
-import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus, Res, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus, Res, Get, Query, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -22,8 +23,9 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  async register(@Body() registerDto: RegisterDto): Promise<{ requiresVerification: true }> {
-    return this.authService.register(registerDto);
+  async register(@Body() registerDto: RegisterDto, @Req() req: Request): Promise<{ requiresVerification: true }> {
+    const userAgent = req.headers['user-agent'] || '';
+    return this.authService.register(registerDto, userAgent);
   }
 
   @Public()

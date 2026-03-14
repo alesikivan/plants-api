@@ -39,11 +39,12 @@ export class TelegramService {
     }
   }
 
-  async notifyUserRegistered(username: string, email: string): Promise<void> {
+  async notifyUserRegistered(username: string, email: string, userAgent = ''): Promise<void> {
     await this.sendMessage(
       `<b>👤 Новый пользователь зарегистрировался</b>\n` +
       `Имя: ${username}\n` +
-      `email: ${email}`,
+      `email: ${email}\n` +
+      (userAgent ? `User-Agent: <code>${userAgent}</code>` : ''),
     );
   }
 

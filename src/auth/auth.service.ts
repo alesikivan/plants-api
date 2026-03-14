@@ -29,7 +29,7 @@ export class AuthService {
     private i18n: I18nService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<{ requiresVerification: true }> {
+  async register(registerDto: RegisterDto, userAgent = ''): Promise<{ requiresVerification: true }> {
     const { user, verificationToken } = await this.usersService.create(registerDto);
     const frontendUrl = this.configService.get<string>('frontendUrl') || process.env.FRONTEND_URL;
 
@@ -47,7 +47,7 @@ export class AuthService {
       console.error('Failed to send verification email:', err);
     }
 
-    this.telegramService.notifyUserRegistered(user.name, user.email).catch(() => {});
+    this.telegramService.notifyUserRegistered(user.name, user.email, userAgent).catch(() => {});
 
     return { requiresVerification: true };
   }
