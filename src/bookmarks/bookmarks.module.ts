@@ -1,24 +1,23 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { FeedService } from './feed.service';
-import { FeedController } from './feed.controller';
+import { BookmarksService } from './bookmarks.service';
+import { BookmarksController } from './bookmarks.controller';
+import { Bookmark, BookmarkSchema } from './schemas/bookmark.schema';
 import { Plant, PlantSchema } from '../plants/schemas/plant.schema';
 import { PlantHistory, PlantHistorySchema } from '../plants/schemas/plant-history.schema';
-import { Follow, FollowSchema } from '../follows/schemas/follow.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
-import { Bookmark, BookmarkSchema } from '../bookmarks/schemas/bookmark.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
+      { name: Bookmark.name, schema: BookmarkSchema },
       { name: Plant.name, schema: PlantSchema },
       { name: PlantHistory.name, schema: PlantHistorySchema },
-      { name: Follow.name, schema: FollowSchema },
       { name: User.name, schema: UserSchema },
-      { name: Bookmark.name, schema: BookmarkSchema },
     ]),
   ],
-  controllers: [FeedController],
-  providers: [FeedService],
+  controllers: [BookmarksController],
+  providers: [BookmarksService],
+  exports: [BookmarksService, MongooseModule],
 })
-export class FeedModule {}
+export class BookmarksModule {}

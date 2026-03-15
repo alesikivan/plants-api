@@ -5,6 +5,7 @@ import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
 import { PlantHistory, PlantHistoryDocument } from '../plants/schemas/plant-history.schema';
 import { Follow, FollowDocument } from '../follows/schemas/follow.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
+import { Bookmark, BookmarkDocument } from '../bookmarks/schemas/bookmark.schema';
 
 export interface FeedUser {
   _id: string;
@@ -28,6 +29,8 @@ export interface FeedPlantItem {
   type: 'plant';
   _id: string;
   createdAt: Date;
+  isOwnItem: boolean;
+  isBookmarked: boolean;
   plant: {
     _id: string;
     photo?: string;
@@ -42,6 +45,8 @@ export interface FeedHistoryItem {
   type: 'plant_history';
   _id: string;
   createdAt: Date;
+  isOwnItem: boolean;
+  isBookmarked: boolean;
   historyEntry: {
     _id: string;
     date: string;
@@ -72,6 +77,7 @@ export class FeedService {
     @InjectModel(PlantHistory.name) private plantHistoryModel: Model<PlantHistoryDocument>,
     @InjectModel(Follow.name) private followModel: Model<FollowDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Bookmark.name) private bookmarkModel: Model<BookmarkDocument>,
   ) {}
 
   private decodeCursor(cursor?: string): { date: Date; id: Types.ObjectId } | null {
@@ -137,12 +143,46 @@ export class FeedService {
     const hasMore = sliced.length > limit;
     const items = sliced.slice(0, limit);
 
+    // Enrich with isOwnItem and isBookmarked
+    const enrichedItems = await this.enrichItems(items, currentUserId);
+
     let nextCursor: string | null = null;
-    if (hasMore && items.length > 0) {
-      nextCursor = this.encodeCursor(items[items.length - 1]);
+    if (hasMore && enrichedItems.length > 0) {
+      nextCursor = this.encodeCursor(enrichedItems[enrichedItems.length - 1]);
     }
 
-    return { items, nextCursor, hasMore };
+    return { items: enrichedItems, nextCursor, hasMore };
+  }
+
+  private async enrichItems(items: FeedItem[], currentUserId: string): Promise<FeedItem[]> {
+    if (items.length === 0) return [];
+
+    const plantIds = items.filter((i) => i.type === 'plant').map((i) => new Types.ObjectId(i._id));
+    const historyIds = items
+      .filter((i) => i.type === 'plant_history')
+      .map((i) => new Types.ObjectId(i._id));
+
+    const userObjId = new Types.ObjectId(currentUserId);
+
+    const orConditions: any[] = [];
+    if (plantIds.length > 0) orConditions.push({ itemType: 'plant', itemId: { $in: plantIds } });
+    if (historyIds.length > 0)
+      orConditions.push({ itemType: 'plant_history', itemId: { $in: historyIds } });
+
+    const bookmarks =
+      orConditions.length > 0
+        ? await this.bookmarkModel
+            .find({ userId: userObjId, $or: orConditions }, { itemType: 1, itemId: 1 })
+            .exec()
+        : [];
+
+    const bookmarkedSet = new Set(bookmarks.map((b) => `${b.itemType}_${b.itemId.toString()}`));
+
+    return items.map((item) => ({
+      ...item,
+      isOwnItem: item.user._id === currentUserId,
+      isBookmarked: bookmarkedSet.has(`${item.type}_${item._id}`),
+    }));
   }
 
   private async fetchPlantItems(
@@ -240,6 +280,8 @@ export class FeedService {
       type: 'plant' as const,
       _id: r._id.toString(),
       createdAt: r.createdAt,
+      isOwnItem: false,
+      isBookmarked: false,
       plant: {
         _id: r._id.toString(),
         photo: r.photo,
@@ -374,6 +416,8 @@ export class FeedService {
       type: 'plant_history' as const,
       _id: r._id.toString(),
       createdAt: r.createdAt,
+      isOwnItem: false,
+      isBookmarked: false,
       historyEntry: {
         _id: r._id.toString(),
         date: r.date,

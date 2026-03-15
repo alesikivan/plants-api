@@ -20,6 +20,7 @@ import { ShelvesModule } from './shelves/shelves.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { FollowsModule } from './follows/follows.module';
 import { FeedModule } from './feed/feed.module';
+import { BookmarksModule } from './bookmarks/bookmarks.module';
 import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 
@@ -54,6 +55,7 @@ import { AppController } from './app.controller';
     WishlistModule,
     FollowsModule,
     FeedModule,
+    BookmarksModule,
     AdminModule,
   ],
   controllers: [AppController],
