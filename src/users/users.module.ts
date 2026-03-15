@@ -8,6 +8,7 @@ import { Shelf, ShelfSchema } from '../shelves/schemas/shelf.schema';
 import { PlantHistory, PlantHistorySchema } from '../plants/schemas/plant-history.schema';
 import { Wishlist, WishlistSchema } from '../wishlist/schemas/wishlist.schema';
 import { Follow, FollowSchema } from '../follows/schemas/follow.schema';
+import { Bookmark, BookmarkSchema } from '../bookmarks/schemas/bookmark.schema';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { Follow, FollowSchema } from '../follows/schemas/follow.schema';
       { name: PlantHistory.name, schema: PlantHistorySchema },
       { name: Wishlist.name, schema: WishlistSchema },
       { name: Follow.name, schema: FollowSchema },
+      { name: Bookmark.name, schema: BookmarkSchema },
     ]),
   ],
   controllers: [UsersController],

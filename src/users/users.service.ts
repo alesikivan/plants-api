@@ -16,6 +16,7 @@ import { Shelf, ShelfDocument } from '../shelves/schemas/shelf.schema';
 import { PlantHistory, PlantHistoryDocument } from '../plants/schemas/plant-history.schema';
 import { Wishlist, WishlistDocument } from '../wishlist/schemas/wishlist.schema';
 import { Follow, FollowDocument } from '../follows/schemas/follow.schema';
+import { Bookmark, BookmarkDocument } from '../bookmarks/schemas/bookmark.schema';
 import { Role } from '../common/enums/role.enum';
 import { compressImage } from '../common/utils/compress-image';
 import { FILE_UPLOAD_CONFIG } from '../config/file-upload.config';
@@ -30,6 +31,7 @@ export class UsersService {
     @InjectModel(PlantHistory.name) private plantHistoryModel: Model<PlantHistoryDocument>,
     @InjectModel(Wishlist.name) private wishlistModel: Model<WishlistDocument>,
     @InjectModel(Follow.name) private followModel: Model<FollowDocument>,
+    @InjectModel(Bookmark.name) private bookmarkModel: Model<BookmarkDocument>,
     private i18n: I18nService,
   ) {}
 
@@ -486,12 +488,23 @@ export class UsersService {
       throw new NotFoundException('Пользователь не найден');
     }
 
+    // Collect IDs of user's content to remove foreign bookmarks pointing to them
+    const [plantIds, historyIds] = await Promise.all([
+      this.plantModel.find({ userId: user._id }, { _id: 1 }).exec().then((docs) => docs.map((d) => d._id)),
+      this.plantHistoryModel.find({ userId: user._id }, { _id: 1 }).exec().then((docs) => docs.map((d) => d._id)),
+    ]);
+
     await Promise.all([
       this.plantModel.deleteMany({ userId: user._id }).exec(),
       this.plantHistoryModel.deleteMany({ userId: user._id }).exec(),
       this.shelfModel.deleteMany({ userId: user._id }).exec(),
       this.wishlistModel.deleteMany({ userId: user._id }).exec(),
       this.followModel.deleteMany({ $or: [{ followerId: new Types.ObjectId(userId) }, { followingId: new Types.ObjectId(userId) }] }).exec(),
+      // Delete bookmarks created by this user
+      this.bookmarkModel.deleteMany({ userId: new Types.ObjectId(userId) }).exec(),
+      // Delete bookmarks by other users pointing to this user's content
+      ...(plantIds.length > 0 ? [this.bookmarkModel.deleteMany({ itemType: 'plant', itemId: { $in: plantIds } }).exec()] : []),
+      ...(historyIds.length > 0 ? [this.bookmarkModel.deleteMany({ itemType: 'plant_history', itemId: { $in: historyIds } }).exec()] : []),
     ]);
 
     await this.userModel.findByIdAndDelete(userId).exec();
