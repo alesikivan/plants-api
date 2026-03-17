@@ -119,12 +119,20 @@ export class TelegramService {
     );
   }
 
-  async notifyAiRecognition(userId: string, username: string, type: 'genus' | 'variety', query: string, suggestion: { nameRu: string; nameEn: string }): Promise<void> {
+  async notifyAiRecognition(
+    userId: string, username: string, 
+    type: 'genus' | 'variety', 
+    query: string, 
+    suggestion: { nameRu: string; nameEn: string },
+    genus?: { nameRu: string; nameEn: string }
+  ): Promise<void> {
     const emoji = type === 'genus' ? '🔍' : '🔬';
     const typeLabel = type === 'genus' ? 'Род' : 'Сорт';
+    const genusLine = genus ? `Род: ${genus.nameRu} / ${genus.nameEn}\n` : '';
     await this.sendMessage(
       `<b>${emoji} ИИ распознавание - ${typeLabel}</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
+      `${genusLine}` + 
       `Запрос: <code>${query}</code>\n` +
       `Результат: ${suggestion.nameRu} / ${suggestion.nameEn}`,
     );
