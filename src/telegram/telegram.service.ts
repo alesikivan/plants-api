@@ -119,6 +119,26 @@ export class TelegramService {
     );
   }
 
+  async notifyWishlistCreated(userId: string, username: string, wishlistId: string, genusName: string): Promise<void> {
+    const base = this.configService.get<string>('frontendUrl') || '';
+    const link = `<a href="${base}/dashboard?wishlistId=${wishlistId}">${genusName}</a>`;
+    await this.sendMessage(
+      `<b>🌿 Новое желание добавлено</b>\n` +
+      `Пользователь: ${this.userLink(userId, username)}\n` +
+      `Растение: ${link}`,
+    );
+  }
+
+  async notifyWishlistUpdated(userId: string, username: string, wishlistId: string, genusName: string): Promise<void> {
+    const base = this.configService.get<string>('frontendUrl') || '';
+    const link = `<a href="${base}/dashboard?wishlistId=${wishlistId}">${genusName}</a>`;
+    await this.sendMessage(
+      `<b>✏️ Желание обновлено</b>\n` +
+      `Пользователь: ${this.userLink(userId, username)}\n` +
+      `Растение: ${link}`,
+    );
+  }
+
   async notifyAiRecognition(
     userId: string, username: string, 
     type: 'genus' | 'variety', 

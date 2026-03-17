@@ -51,7 +51,7 @@ export class WishlistController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req,
   ) {
-    return this.wishlistService.create(createWishlistDto, file, req.user._id);
+    return this.wishlistService.create(createWishlistDto, file, req.user._id, req.user.name);
   }
 
   @Get()
@@ -85,7 +85,7 @@ export class WishlistController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req,
   ) {
-    return this.wishlistService.update(id, updateWishlistDto, file, req.user._id);
+    return this.wishlistService.update(id, updateWishlistDto, file, req.user._id, req.user.name);
   }
 
   @Public()

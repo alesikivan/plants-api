@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { I18nService } from 'nestjs-i18n';
 import { Wishlist, WishlistDocument } from './schemas/wishlist.schema';
+import { TelegramService } from '../telegram/telegram.service';
 
 function buildCaseInsensitiveRegex(term: string): RegExp {
   const pattern = term
@@ -32,12 +33,14 @@ export class WishlistService {
     @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
     @InjectModel(Variety.name) private varietyModel: Model<VarietyDocument>,
     private readonly i18n: I18nService,
+    private readonly telegramService: TelegramService,
   ) {}
 
   async create(
     createWishlistDto: CreateWishlistDto,
     file: Express.Multer.File | undefined,
     userId: string,
+    username: string,
   ): Promise<Wishlist> {
     const wishlistData: any = {
       ...createWishlistDto,
@@ -51,6 +54,12 @@ export class WishlistService {
 
     const wishlist = new this.wishlistModel(wishlistData);
     await wishlist.save();
+
+    const genus = createWishlistDto.genusId
+      ? await this.genusModel.findById(createWishlistDto.genusId).exec()
+      : null;
+    const genusName = genus?.nameRu || genus?.nameEn || 'Unknown';
+    this.telegramService.notifyWishlistCreated(userId, username, String(wishlist._id), genusName).catch(() => {});
 
     return wishlist;
   }
@@ -115,6 +124,7 @@ export class WishlistService {
     updateWishlistDto: UpdateWishlistDto,
     file: Express.Multer.File | undefined,
     userId: string,
+    username: string,
   ): Promise<Wishlist> {
     const existingWishlist = await this.wishlistModel.findOne({ _id: id, userId }).exec();
 
@@ -159,6 +169,11 @@ export class WishlistService {
       .populate('genusId')
       .populate('varietyId')
       .exec();
+
+    const genusId = updateWishlistDto.genusId || existingWishlist.genusId;
+    const genus = genusId ? await this.genusModel.findById(genusId).exec() : null;
+    const genusName = genus?.nameRu || genus?.nameEn || 'Unknown';
+    this.telegramService.notifyWishlistUpdated(userId, username, id, genusName).catch(() => {});
 
     return wishlist;
   }
