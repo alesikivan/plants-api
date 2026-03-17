@@ -126,6 +126,7 @@ export class VarietyService {
         'variety',
         query,
         suggestion,
+        { nameRu: genus.nameRu, nameEn: genus.nameEn }
       ).catch(() => {});
     }
 
