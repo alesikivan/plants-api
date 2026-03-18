@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../users/schemas/user.schema';
+import { NotificationsService } from '../notifications/notifications.service';
 import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
 import { Shelf, ShelfDocument } from '../shelves/schemas/shelf.schema';
 import { PlantHistory, PlantHistoryDocument } from '../plants/schemas/plant-history.schema';
@@ -63,7 +64,32 @@ export class AdminService {
     @InjectModel(PlantHistory.name) private plantHistoryModel: Model<PlantHistoryDocument>,
     @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
     @InjectModel(Variety.name) private varietyModel: Model<VarietyDocument>,
+    private notificationsService: NotificationsService,
   ) {}
+
+  async broadcastNotification(
+    title: string,
+    message: string,
+    userIds?: string[],
+  ): Promise<{ sent: number }> {
+    let targetIds: string[];
+
+    if (userIds && userIds.length > 0) {
+      targetIds = userIds;
+    } else {
+      const users = await this.userModel
+        .find({ isBlocked: { $ne: true } })
+        .select('_id')
+        .lean();
+      targetIds = users.map((u) => u._id.toString());
+    }
+
+    await Promise.all(
+      targetIds.map((id) => this.notificationsService.createSystem(id, title, message)),
+    );
+
+    return { sent: targetIds.length };
+  }
 
   async getInfo(): Promise<AdminInfoResponse> {
     const uploads = this.getUploadsInfo();

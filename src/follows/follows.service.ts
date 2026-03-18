@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { I18nService, I18nContext } from 'nestjs-i18n';
 import { Follow, FollowDocument } from './schemas/follow.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
+import { NotificationsService } from '../notifications/notifications.service';
 
 export interface FollowUserDto {
   id: string;
@@ -28,6 +29,7 @@ export class FollowsService {
     @InjectModel(Follow.name) private followModel: Model<FollowDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private i18n: I18nService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async follow(followerId: string, followingId: string): Promise<void> {
@@ -62,6 +64,8 @@ export class FollowsService {
       }
       throw err;
     }
+
+    this.notificationsService.create(followingId, 'new_follower', followerId).catch(() => {});
   }
 
   async unfollow(followerId: string, followingId: string): Promise<void> {

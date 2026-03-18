@@ -22,6 +22,7 @@ import { FollowsModule } from './follows/follows.module';
 import { FeedModule } from './feed/feed.module';
 import { BookmarksModule } from './bookmarks/bookmarks.module';
 import { AdminModule } from './admin/admin.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -57,6 +58,7 @@ import { AppController } from './app.controller';
     FeedModule,
     BookmarksModule,
     AdminModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

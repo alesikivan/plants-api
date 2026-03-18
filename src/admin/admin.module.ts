@@ -8,6 +8,7 @@ import { Shelf, ShelfSchema } from '../shelves/schemas/shelf.schema';
 import { PlantHistory, PlantHistorySchema } from '../plants/schemas/plant-history.schema';
 import { Genus, GenusSchema } from '../genus/schemas/genus.schema';
 import { Variety, VarietySchema } from '../variety/schemas/variety.schema';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { Variety, VarietySchema } from '../variety/schemas/variety.schema';
       { name: Genus.name, schema: GenusSchema },
       { name: Variety.name, schema: VarietySchema },
     ]),
+    NotificationsModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],

@@ -3,7 +3,7 @@ import { Document, Types } from 'mongoose';
 
 export type NotificationDocument = Notification & Document;
 
-export type NotificationType = 'new_follower' | 'new_bookmark';
+export type NotificationType = 'new_follower' | 'new_bookmark_plant' | 'new_bookmark_history' | 'system';
 
 @Schema({ timestamps: { createdAt: true, updatedAt: false } })
 export class Notification {
@@ -13,8 +13,8 @@ export class Notification {
   @Prop({ required: true })
   type: NotificationType;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  actorId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'User', default: null })
+  actorId: Types.ObjectId | null;
 
   @Prop({ type: Object, default: {} })
   data: Record<string, string>;

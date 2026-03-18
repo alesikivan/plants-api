@@ -6,6 +6,7 @@ import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
 import { PlantHistory, PlantHistoryDocument } from '../plants/schemas/plant-history.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { FeedPlantItem, FeedHistoryItem, FeedItem, FeedResponse } from '../feed/feed.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class BookmarksService {
@@ -14,6 +15,7 @@ export class BookmarksService {
     @InjectModel(Plant.name) private plantModel: Model<PlantDocument>,
     @InjectModel(PlantHistory.name) private plantHistoryModel: Model<PlantHistoryDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private notificationsService: NotificationsService,
   ) {}
 
   async toggle(
@@ -40,7 +42,39 @@ export class BookmarksService {
       itemType,
       itemId: itemObjId,
     });
+
+    this.notifyBookmarkOwner(userId, itemType, itemObjId, itemId).catch(() => {});
+
     return { bookmarked: true };
+  }
+
+  private async notifyBookmarkOwner(
+    actorId: string,
+    itemType: 'plant' | 'plant_history',
+    itemObjId: Types.ObjectId,
+    itemId: string,
+  ): Promise<void> {
+    if (itemType === 'plant') {
+      const plant = await this.plantModel.findById(itemObjId).select('userId').lean();
+      if (plant?.userId) {
+        await this.notificationsService.create(
+          plant.userId.toString(),
+          'new_bookmark_plant',
+          actorId,
+          { plantId: itemId },
+        );
+      }
+    } else {
+      const history = await this.plantHistoryModel.findById(itemObjId).select('userId plantId').lean();
+      if (history?.userId) {
+        await this.notificationsService.create(
+          history.userId.toString(),
+          'new_bookmark_history',
+          actorId,
+          { plantId: history.plantId?.toString() ?? '', historyId: itemId },
+        );
+      }
+    }
   }
 
   private decodeCursor(cursor?: string): { date: Date; id: Types.ObjectId } | null {

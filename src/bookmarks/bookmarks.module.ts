@@ -6,6 +6,7 @@ import { Bookmark, BookmarkSchema } from './schemas/bookmark.schema';
 import { Plant, PlantSchema } from '../plants/schemas/plant.schema';
 import { PlantHistory, PlantHistorySchema } from '../plants/schemas/plant-history.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
       { name: PlantHistory.name, schema: PlantHistorySchema },
       { name: User.name, schema: UserSchema },
     ]),
+    NotificationsModule,
   ],
   controllers: [BookmarksController],
   providers: [BookmarksService],

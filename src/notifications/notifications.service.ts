@@ -105,4 +105,13 @@ export class NotificationsService {
       isRead: false,
     });
   }
+
+  async createSystem(userId: string, title: string, message: string): Promise<void> {
+    await this.notificationModel.create({
+      userId: new Types.ObjectId(userId),
+      type: 'system' as NotificationType,
+      actorId: null,
+      data: { title, message },
+    });
+  }
 }
