@@ -14,9 +14,11 @@ async function bootstrap() {
 
   // Enable CORS for frontend
   const frontendUrl = configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+  const frontendUrlWww = frontendUrl.replace(/^(https?:\/\/)/, '$1www.');
   const allowedOrigins = [
     /^http:\/\/localhost:\d+$/, // localhost on any port
     frontendUrl,
+    frontendUrlWww,
   ];
 
   app.enableCors({
