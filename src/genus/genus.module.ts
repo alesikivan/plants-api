@@ -6,6 +6,7 @@ import { Genus, GenusSchema } from './schemas/genus.schema';
 import { AiModule } from '../ai/ai.module';
 import { Plant, PlantSchema } from '../plants/schemas/plant.schema';
 import { TelegramModule } from '../telegram/telegram.module';
+import { AiRecognitionLogModule } from '../ai-recognition/ai-recognition-log.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { TelegramModule } from '../telegram/telegram.module';
     ]),
     AiModule,
     TelegramModule,
+    AiRecognitionLogModule,
   ],
   controllers: [GenusController],
   providers: [GenusService],

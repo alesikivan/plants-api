@@ -23,6 +23,7 @@ import { FeedModule } from './feed/feed.module';
 import { BookmarksModule } from './bookmarks/bookmarks.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AiRecognitionLogModule } from './ai-recognition/ai-recognition-log.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -59,6 +60,7 @@ import { AppController } from './app.controller';
     BookmarksModule,
     AdminModule,
     NotificationsModule,
+    AiRecognitionLogModule,
   ],
   controllers: [AppController],
   providers: [

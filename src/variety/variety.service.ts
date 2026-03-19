@@ -9,6 +9,7 @@ import { GenusService } from '../genus/genus.service';
 import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
 import { TelegramService } from '../telegram/telegram.service';
 import { UserDocument } from '../users/schemas/user.schema';
+import { AiRecognitionLogService } from '../ai-recognition/ai-recognition-log.service';
 
 export interface ValidateVarietyResult {
   suggestion: PlantNameSuggestion;
@@ -22,6 +23,7 @@ export class VarietyService {
     private aiService: AiService,
     private genusService: GenusService,
     private telegramService: TelegramService,
+    private aiRecognitionLogService: AiRecognitionLogService,
   ) {}
 
   async create(createVarietyDto: CreateVarietyDto): Promise<Variety> {
@@ -129,6 +131,20 @@ export class VarietyService {
         { nameRu: genus.nameRu, nameEn: genus.nameEn }
       ).catch(() => {});
     }
+
+    // Persist to DB
+    this.aiRecognitionLogService.log({
+      userId: user?._id.toString(),
+      userName: user?.name,
+      type: 'variety',
+      query,
+      recognized: suggestion.recognized,
+      resultNameRu: suggestion.nameRu,
+      resultNameEn: suggestion.nameEn,
+      genusId,
+      genusNameRu: genus.nameRu,
+      genusNameEn: genus.nameEn,
+    });
 
     return { suggestion };
   }

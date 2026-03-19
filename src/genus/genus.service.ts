@@ -8,6 +8,7 @@ import { AiService, PlantNameSuggestion } from '../ai/ai.service';
 import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
 import { TelegramService } from '../telegram/telegram.service';
 import { UserDocument } from '../users/schemas/user.schema';
+import { AiRecognitionLogService } from '../ai-recognition/ai-recognition-log.service';
 
 export interface ValidateGenusResult {
   suggestion: PlantNameSuggestion;
@@ -20,6 +21,7 @@ export class GenusService {
     @InjectModel(Plant.name) private plantModel: Model<PlantDocument>,
     private aiService: AiService,
     private telegramService: TelegramService,
+    private aiRecognitionLogService: AiRecognitionLogService,
   ) {}
 
   async create(createGenusDto: CreateGenusDto): Promise<Genus> {
@@ -102,6 +104,17 @@ export class GenusService {
         suggestion,
       ).catch(() => {});
     }
+
+    // Persist to DB
+    this.aiRecognitionLogService.log({
+      userId: user?._id.toString(),
+      userName: user?.name,
+      type: 'genus',
+      query,
+      recognized: suggestion.recognized,
+      resultNameRu: suggestion.nameRu,
+      resultNameEn: suggestion.nameEn,
+    });
 
     return { suggestion };
   }

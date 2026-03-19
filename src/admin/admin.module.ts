@@ -9,6 +9,7 @@ import { PlantHistory, PlantHistorySchema } from '../plants/schemas/plant-histor
 import { Genus, GenusSchema } from '../genus/schemas/genus.schema';
 import { Variety, VarietySchema } from '../variety/schemas/variety.schema';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AiRecognitionLogModule } from '../ai-recognition/ai-recognition-log.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       { name: Variety.name, schema: VarietySchema },
     ]),
     NotificationsModule,
+    AiRecognitionLogModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],
