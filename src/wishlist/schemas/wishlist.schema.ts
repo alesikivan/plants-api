@@ -17,6 +17,9 @@ export class Wishlist {
   @Prop()
   photo?: string;
 
+  @Prop({ type: Number, default: 0 })
+  sortOrder: number;
+
   createdAt: Date;
   updatedAt: Date;
 }

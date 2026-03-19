@@ -73,6 +73,11 @@ export class ShelvesController {
     return this.shelvesService.adminRemove(id);
   }
 
+  @Patch('reorder')
+  reorder(@Body() body: { ids: string[] }, @Request() req) {
+    return this.shelvesService.reorder(body.ids, req.user._id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     return this.shelvesService.findOne(id, req.user._id);

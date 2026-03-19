@@ -577,7 +577,7 @@ export class UsersService {
     }
     const shelves = await this.shelfModel
       .find({ userId: user._id })
-      .sort({ createdAt: -1 })
+      .sort({ sortOrder: 1, createdAt: -1 })
       .exec();
 
     return Promise.all(

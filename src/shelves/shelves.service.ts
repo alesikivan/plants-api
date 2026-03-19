@@ -66,7 +66,7 @@ export class ShelvesService {
 
     const shelves = await this.shelfModel
       .find(query)
-      .sort({ createdAt: -1 })
+      .sort({ sortOrder: 1, createdAt: -1 })
       .exec();
 
     // For each shelf, get plants and attach them
@@ -235,6 +235,16 @@ export class ShelvesService {
         fs.unlinkSync(photoPath);
       }
     }
+  }
+
+  async reorder(ids: string[], userId: string): Promise<void> {
+    const bulkOps = ids.map((id, index) => ({
+      updateOne: {
+        filter: { _id: id, userId },
+        update: { $set: { sortOrder: index } },
+      },
+    }));
+    await this.shelfModel.bulkWrite(bulkOps);
   }
 
   async adminFindAll(): Promise<Shelf[]> {

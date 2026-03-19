@@ -99,7 +99,7 @@ export class WishlistService {
       .find(query)
       .populate('genusId')
       .populate('varietyId')
-      .sort({ createdAt: -1 })
+      .sort({ sortOrder: 1, createdAt: -1 })
       .exec();
   }
 
@@ -176,6 +176,16 @@ export class WishlistService {
     this.telegramService.notifyWishlistUpdated(userId, username, id, genusName).catch(() => {});
 
     return wishlist;
+  }
+
+  async reorder(ids: string[], userId: string): Promise<void> {
+    const bulkOps = ids.map((id, index) => ({
+      updateOne: {
+        filter: { _id: id, userId },
+        update: { $set: { sortOrder: index } },
+      },
+    }));
+    await this.wishlistModel.bulkWrite(bulkOps);
   }
 
   async remove(id: string, userId: string): Promise<void> {

@@ -17,6 +17,9 @@ export class Shelf {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Plant' }], default: [] })
   plantIds: Types.ObjectId[];
 
+  @Prop({ type: Number, default: 0 })
+  sortOrder: number;
+
   createdAt: Date;
   updatedAt: Date;
 }

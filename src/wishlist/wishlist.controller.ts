@@ -64,6 +64,11 @@ export class WishlistController {
     return this.wishlistService.findAll(req.user._id, search, genusId, varietyId);
   }
 
+  @Patch('reorder')
+  reorder(@Body() body: { ids: string[] }, @Request() req) {
+    return this.wishlistService.reorder(body.ids, req.user._id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     return this.wishlistService.findOne(id, req.user._id);
