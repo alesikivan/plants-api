@@ -16,7 +16,7 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(5)
-  @MaxLength(30)
+  @MaxLength(17)
   @Transform(({ value }) => value?.trim().replace(/\s+/g, ' '))
   name: string;
 

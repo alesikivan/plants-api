@@ -16,7 +16,7 @@ export class RegisterDto {
   @IsString({ message: i18nValidationMessage('validation.auth.nameString') })
   @IsNotEmpty({ message: i18nValidationMessage('validation.auth.nameRequired') })
   @MinLength(5, { message: i18nValidationMessage('validation.auth.nameMinLength') })
-  @MaxLength(30, { message: i18nValidationMessage('validation.auth.nameMaxLength') })
+  @MaxLength(17, { message: i18nValidationMessage('validation.auth.nameMaxLength') })
   @Transform(({ value }) => value?.trim().replace(/\s+/g, ' '))
   name: string;
 
