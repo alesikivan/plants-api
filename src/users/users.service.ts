@@ -219,7 +219,7 @@ export class UsersService {
     return user;
   }
 
-  async searchUsers(query?: string): Promise<UserProfileWithStatsDto[]> {
+  async searchUsers(query?: string, sort?: string): Promise<UserProfileWithStatsDto[]> {
     let filter: Record<string, any> = { isBlocked: { $ne: true } };
 
     if (query && query.trim()) {
@@ -229,7 +229,13 @@ export class UsersService {
       };
     }
 
-    const users = await this.userModel.find(filter).sort({ createdAt: 1 }).exec();
+    const sortOptions: Record<string, Record<string, 1 | -1>> = {
+      newest: { createdAt: -1 },
+      oldest: { createdAt: 1 },
+    };
+    const mongoSort = sortOptions[sort] || { createdAt: -1 };
+
+    const users = await this.userModel.find(filter).sort(mongoSort).exec();
 
     // Получаем статистику для каждого пользователя
     const usersWithStats = await Promise.all(
@@ -263,6 +269,11 @@ export class UsersService {
         });
       })
     );
+
+    // Сортировка по количеству растений — после получения статистики
+    if (sort === 'mostPlants') {
+      usersWithStats.sort((a, b) => b.stats.totalPlants - a.stats.totalPlants);
+    }
 
     return usersWithStats;
   }

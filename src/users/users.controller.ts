@@ -31,8 +31,11 @@ export class UsersController {
 
   @Get('search')
   @OptionalAuth()
-  async searchUsers(@Query('q') query?: string): Promise<UserProfileWithStatsDto[]> {
-    return this.usersService.searchUsers(query);
+  async searchUsers(
+    @Query('q') query?: string,
+    @Query('sort') sort?: string,
+  ): Promise<UserProfileWithStatsDto[]> {
+    return this.usersService.searchUsers(query, sort);
   }
 
   @Get('seo/sitemap')
