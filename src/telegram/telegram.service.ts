@@ -139,6 +139,15 @@ export class TelegramService {
     );
   }
 
+  async notifyNameChanged(userId: string, oldName: string, newName: string): Promise<void> {
+    await this.sendMessage(
+      `<b>✏️ Пользователь сменил имя</b>\n` +
+      `Профиль: ${this.userLink(userId, newName)}\n` +
+      `Было: <code>${oldName}</code>\n` +
+      `Стало: <code>${newName}</code>`,
+    );
+  }
+
   async notifyAiRecognition(
     userId: string, username: string, 
     type: 'genus' | 'variety', 

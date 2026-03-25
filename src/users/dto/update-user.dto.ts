@@ -1,5 +1,5 @@
-import { IsEnum, IsOptional, IsBoolean, IsArray, ValidateNested, IsString, MaxLength } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsEnum, IsOptional, IsBoolean, IsArray, ValidateNested, IsString, MaxLength, MinLength } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
 export class SocialLinkDto {
   @IsString()
@@ -13,6 +13,13 @@ export class SocialLinkDto {
 }
 
 export class UpdateUserDto {
+  @IsString()
+  @MinLength(5)
+  @MaxLength(17)
+  @Transform(({ value }) => value?.trim().replace(/\s+/g, ' '))
+  @IsOptional()
+  name?: string;
+
   @IsString()
   @MaxLength(80)
   @IsOptional()

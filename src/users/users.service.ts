@@ -21,6 +21,7 @@ import { Role } from '../common/enums/role.enum';
 import { compressImage } from '../common/utils/compress-image';
 import { FILE_UPLOAD_CONFIG } from '../config/file-upload.config';
 import { I18nService } from 'nestjs-i18n';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class UsersService {
@@ -33,6 +34,7 @@ export class UsersService {
     @InjectModel(Follow.name) private followModel: Model<FollowDocument>,
     @InjectModel(Bookmark.name) private bookmarkModel: Model<BookmarkDocument>,
     private i18n: I18nService,
+    private telegramService: TelegramService,
   ) {}
 
   private validateSocialLinks(socialLinks: any[]): void {
@@ -206,6 +208,20 @@ export class UsersService {
       this.validateSocialLinks(updateUserDto.socialLinks);
     }
 
+    if (updateUserDto.name) {
+      const existing = await this.userModel.findOne({ name: updateUserDto.name, _id: { $ne: new Types.ObjectId(userId) } }).exec();
+      if (existing) {
+        throw new ConflictException(await this.i18n.translate('auth.errors.userExistsByName'));
+      }
+    }
+
+    const currentUser = await this.userModel.findById(userId).exec();
+    if (!currentUser) {
+      throw new NotFoundException('Пользователь не найден');
+    }
+
+    const oldName = currentUser.name;
+
     const user = await this.userModel.findByIdAndUpdate(
       userId,
       updateUserDto,
@@ -214,6 +230,10 @@ export class UsersService {
 
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
+    }
+
+    if (updateUserDto.name && updateUserDto.name !== oldName) {
+      this.telegramService.notifyNameChanged(userId, oldName, user.name).catch(() => {});
     }
 
     return user;

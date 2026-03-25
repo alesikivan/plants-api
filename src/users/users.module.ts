@@ -9,9 +9,11 @@ import { PlantHistory, PlantHistorySchema } from '../plants/schemas/plant-histor
 import { Wishlist, WishlistSchema } from '../wishlist/schemas/wishlist.schema';
 import { Follow, FollowSchema } from '../follows/schemas/follow.schema';
 import { Bookmark, BookmarkSchema } from '../bookmarks/schemas/bookmark.schema';
+import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
   imports: [
+    TelegramModule,
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: Plant.name, schema: PlantSchema },
