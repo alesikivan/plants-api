@@ -220,6 +220,10 @@ export class UsersService {
       throw new NotFoundException('Пользователь не найден');
     }
 
+    if (updateUserDto.showPlants === false) {
+      updateUserDto.showPlantHistory = false;
+    }
+
     const oldName = currentUser.name;
 
     const user = await this.userModel.findByIdAndUpdate(
@@ -236,7 +240,34 @@ export class UsersService {
       this.telegramService.notifyNameChanged(userId, oldName, user.name).catch(() => {});
     }
 
+    const hidingPlants = updateUserDto.showPlants === false && currentUser.showPlants !== false;
+    const hidingHistory = updateUserDto.showPlantHistory === false && currentUser.showPlantHistory !== false;
+
+    if (hidingPlants || hidingHistory) {
+      this.deleteOwnerBookmarks(userId, hidingPlants, hidingPlants || hidingHistory).catch(() => {});
+    }
+
     return user;
+  }
+
+  private async deleteOwnerBookmarks(userId: string, includePlants: boolean, includeHistory: boolean): Promise<void> {
+    const ownerObjId = new Types.ObjectId(userId);
+
+    if (includePlants) {
+      const plants = await this.plantModel.find({ userId: ownerObjId }).select('_id').lean();
+      const plantIds = plants.map((p) => p._id);
+      if (plantIds.length > 0) {
+        await this.bookmarkModel.deleteMany({ itemType: 'plant', itemId: { $in: plantIds } });
+      }
+    }
+
+    if (includeHistory) {
+      const histories = await this.plantHistoryModel.find({ userId: ownerObjId }).select('_id').lean();
+      const historyIds = histories.map((h) => h._id);
+      if (historyIds.length > 0) {
+        await this.bookmarkModel.deleteMany({ itemType: 'plant_history', itemId: { $in: historyIds } });
+      }
+    }
   }
 
   async searchUsers(query?: string, sort?: string): Promise<UserProfileWithStatsDto[]> {
