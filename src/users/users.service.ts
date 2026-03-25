@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -25,6 +25,8 @@ import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Plant.name) private plantModel: Model<PlantDocument>,
@@ -88,14 +90,18 @@ export class UsersService {
 
   private canBypassPrivacy(targetUser: UserDocument, requester?: UserDocument | null): boolean {
     if (!requester) {
+      this.logger.debug(`canBypassPrivacy: no requester → false`);
       return false;
     }
 
     if (requester.role === Role.ADMIN) {
+      this.logger.debug(`canBypassPrivacy: requester ${requester._id} is ADMIN → true`);
       return true;
     }
 
-    return requester._id?.toString() === targetUser._id.toString();
+    const isSelf = requester._id?.toString() === targetUser._id.toString();
+    this.logger.debug(`canBypassPrivacy: requester=${requester._id} target=${targetUser._id} isSelf=${isSelf}`);
+    return isSelf;
   }
 
   async create(
@@ -589,11 +595,17 @@ export class UsersService {
   }
 
   async getUserPlant(userId: string, plantId: string, requester?: UserDocument | null): Promise<Plant> {
+    this.logger.log(`getUserPlant: userId=${userId} plantId=${plantId} requesterId=${requester?._id ?? 'anonymous'}`);
     const user = await this.userModel.findById(userId).exec();
     if (!user) {
+      this.logger.warn(`getUserPlant: user ${userId} not found`);
       throw new NotFoundException('Пользователь не найден');
     }
-    if (!this.canBypassPrivacy(user, requester) && !(user.showPlants ?? true)) {
+    const bypass = this.canBypassPrivacy(user, requester);
+    const showPlants = user.showPlants ?? true;
+    this.logger.log(`getUserPlant: bypass=${bypass} showPlants=${showPlants} (user.showPlants=${user.showPlants})`);
+    if (!bypass && !showPlants) {
+      this.logger.warn(`getUserPlant: 403 — userId=${userId} plantId=${plantId} requesterId=${requester?._id ?? 'anonymous'}`);
       throw new ForbiddenException('Пользователь скрыл свою коллекцию растений');
     }
     const plant = await this.plantModel
