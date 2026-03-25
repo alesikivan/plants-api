@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards, BadRequestException } from '@nestjs/common';
 import { IsIn, IsString } from 'class-validator';
 import { BookmarksService } from './bookmarks.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -24,6 +24,24 @@ export class BookmarksController {
     @Body() dto: ToggleBookmarkDto,
   ): Promise<{ bookmarked: boolean }> {
     return this.bookmarksService.toggle(user._id.toString(), dto.itemType, dto.itemId);
+  }
+
+  @Get('plants')
+  async getSavedPlants(@CurrentUser() user: any): Promise<any[]> {
+    return this.bookmarksService.getSavedPlants(user._id.toString());
+  }
+
+  @Get('status')
+  async getBookmarkStatus(
+    @CurrentUser() user: any,
+    @Query('itemType') itemType: string,
+    @Query('itemId') itemId: string,
+  ): Promise<{ isBookmarked: boolean }> {
+    if (!itemType || !itemId) throw new BadRequestException('itemType and itemId are required');
+    if (itemType !== 'plant' && itemType !== 'plant_history') {
+      throw new BadRequestException('itemType must be plant or plant_history');
+    }
+    return this.bookmarksService.getBookmarkStatus(user._id.toString(), itemType, itemId);
   }
 
   @Get('feed')

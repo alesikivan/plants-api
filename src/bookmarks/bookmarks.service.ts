@@ -231,6 +231,100 @@ export class BookmarksService {
     }));
   }
 
+  async getSavedPlants(userId: string): Promise<any[]> {
+    const userObjId = new Types.ObjectId(userId);
+
+    const bookmarks = await this.bookmarkModel
+      .find({ userId: userObjId, itemType: 'plant' })
+      .sort({ createdAt: -1 })
+      .exec();
+
+    if (bookmarks.length === 0) return [];
+
+    const plantIds = bookmarks.map((b) => b.itemId as Types.ObjectId);
+
+    const plants = await this.plantModel.aggregate([
+      { $match: { _id: { $in: plantIds }, isArchived: { $ne: true } } },
+      {
+        $addFields: {
+          genusIdObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$genusId' }, 'string'] },
+              then: { $toObjectId: '$genusId' },
+              else: '$genusId',
+            },
+          },
+          varietyIdObj: {
+            $cond: {
+              if: { $eq: [{ $type: '$varietyId' }, 'string'] },
+              then: { $toObjectId: '$varietyId' },
+              else: '$varietyId',
+            },
+          },
+        },
+      },
+      { $lookup: { from: 'genuses', localField: 'genusIdObj', foreignField: '_id', as: 'genusDoc' } },
+      { $unwind: { path: '$genusDoc', preserveNullAndEmptyArrays: true } },
+      { $lookup: { from: 'varieties', localField: 'varietyIdObj', foreignField: '_id', as: 'varietyDoc' } },
+      { $unwind: { path: '$varietyDoc', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          userId: 1,
+          photo: 1,
+          description: 1,
+          purchaseDate: 1,
+          isArchived: 1,
+          sortOrder: 1,
+          shelfIds: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          genusDoc: { _id: 1, nameRu: 1, nameEn: 1, nameLatin: 1 },
+          varietyDoc: { _id: 1, nameRu: 1, nameEn: 1 },
+        },
+      },
+    ]);
+
+    const plantMap = new Map<string, any>();
+    for (const p of plants) {
+      plantMap.set(p._id.toString(), {
+        _id: p._id.toString(),
+        userId: p.userId?.toString() ?? '',
+        genusId: p.genusDoc
+          ? { _id: p.genusDoc._id.toString(), nameRu: p.genusDoc.nameRu, nameEn: p.genusDoc.nameEn, nameLatin: p.genusDoc.nameLatin }
+          : { _id: '', nameRu: 'Неизвестный', nameEn: 'Unknown' },
+        varietyId: p.varietyDoc
+          ? { _id: p.varietyDoc._id.toString(), nameRu: p.varietyDoc.nameRu, nameEn: p.varietyDoc.nameEn }
+          : undefined,
+        photo: p.photo,
+        description: p.description,
+        purchaseDate: p.purchaseDate,
+        isArchived: p.isArchived,
+        sortOrder: p.sortOrder,
+        shelfIds: (p.shelfIds ?? []).map((id: any) => id.toString()),
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      });
+    }
+
+    return plantIds
+      .map((id) => plantMap.get(id.toString()))
+      .filter(Boolean);
+  }
+
+  async getBookmarkStatus(
+    userId: string,
+    itemType: 'plant' | 'plant_history',
+    itemId: string,
+  ): Promise<{ isBookmarked: boolean }> {
+    const existing = await this.bookmarkModel.findOne({
+      userId: new Types.ObjectId(userId),
+      itemType,
+      itemId: new Types.ObjectId(itemId),
+    });
+    return { isBookmarked: !!existing };
+  }
+
   private async fetchHistoryItemsByIds(ids: Types.ObjectId[]): Promise<FeedHistoryItem[]> {
     const results = await this.plantHistoryModel.aggregate([
       { $match: { _id: { $in: ids } } },
