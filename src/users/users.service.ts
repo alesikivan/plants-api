@@ -313,6 +313,7 @@ export class UsersService {
           showPlants: user.showPlants ?? true,
           showShelves: user.showShelves ?? true,
           showPlantHistory: user.showPlantHistory ?? true,
+          showWishlist: user.showWishlist ?? false,
           bio: user.bio,
           avatar: user.avatar,
           socialLinks: this.filterPublicSocialLinks(user.socialLinks),
@@ -443,6 +444,7 @@ export class UsersService {
       showPlants: user.showPlants ?? true,
       showShelves: user.showShelves ?? true,
       showPlantHistory: user.showPlantHistory ?? true,
+      showWishlist: user.showWishlist ?? false,
       bio: user.bio,
       avatar: user.avatar,
       socialLinks: this.filterPublicSocialLinks(user.socialLinks),
@@ -466,6 +468,7 @@ export class UsersService {
       showPlants: user.showPlants ?? true,
       showShelves: user.showShelves ?? true,
       showPlantHistory: user.showPlantHistory ?? true,
+      showWishlist: user.showWishlist ?? false,
       isBlocked: user.isBlocked ?? false,
       bio: user.bio,
       avatar: user.avatar,
@@ -667,6 +670,22 @@ export class UsersService {
         return { ...shelf.toObject(), plants, plantsCount: shelf.plantIds?.length || 0 };
       }),
     );
+  }
+
+  async getUserWishlist(userId: string, requester?: UserDocument | null): Promise<any[]> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
+    }
+    if (!this.canBypassPrivacy(user, requester) && !user.showWishlist) {
+      throw new ForbiddenException('Пользователь скрыл свой вишлист');
+    }
+    return this.wishlistModel
+      .find({ userId: user._id })
+      .populate('genusId')
+      .populate('varietyId')
+      .sort({ sortOrder: 1, createdAt: -1 })
+      .exec();
   }
 
   async getUserShelf(userId: string, shelfId: string, requester?: UserDocument | null): Promise<any> {

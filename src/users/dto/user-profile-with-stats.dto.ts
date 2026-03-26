@@ -10,6 +10,7 @@ export class UserProfileWithStatsDto {
   showPlants: boolean;
   showShelves: boolean;
   showPlantHistory: boolean;
+  showWishlist: boolean;
   bio?: string;
   avatar?: string;
   socialLinks?: SocialLink[];

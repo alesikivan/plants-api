@@ -10,6 +10,7 @@ export class UserResponseDto {
   showPlants: boolean;
   showShelves: boolean;
   showPlantHistory: boolean;
+  showWishlist: boolean;
   isBlocked: boolean;
   bio?: string;
   avatar?: string;

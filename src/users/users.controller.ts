@@ -126,6 +126,15 @@ export class UsersController {
     return this.usersService.getUserPlant(userId, plantId, requester);
   }
 
+  @Get(':userId/wishlist')
+  @OptionalAuth()
+  async getUserWishlist(
+    @Param('userId') userId: string,
+    @CurrentUser() requester?: UserDocument,
+  ) {
+    return this.usersService.getUserWishlist(userId, requester);
+  }
+
   @Get(':userId/shelves')
   @OptionalAuth()
   async getUserShelves(

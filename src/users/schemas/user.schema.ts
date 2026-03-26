@@ -40,6 +40,9 @@ export class User {
   showPlantHistory: boolean;
 
   @Prop({ type: Boolean, default: false })
+  showWishlist: boolean;
+
+  @Prop({ type: Boolean, default: false })
   isBlocked: boolean;
 
   @Prop({ type: Boolean, default: true })

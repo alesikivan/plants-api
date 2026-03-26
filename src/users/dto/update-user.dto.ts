@@ -41,6 +41,10 @@ export class UpdateUserDto {
   @IsOptional()
   showPlantHistory?: boolean;
 
+  @IsBoolean()
+  @IsOptional()
+  showWishlist?: boolean;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SocialLinkDto)
