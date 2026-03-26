@@ -351,6 +351,54 @@ export class PlantsService {
     }
   }
 
+  async adminUpdate(
+    id: string,
+    updatePlantDto: UpdatePlantDto,
+    file: Express.Multer.File | undefined,
+  ): Promise<Plant> {
+    const existingPlant = await this.plantModel.findById(id).exec();
+
+    if (!existingPlant) {
+      throw new NotFoundException(`Plant with ID ${id} not found`);
+    }
+
+    const updateData: any = { ...updatePlantDto };
+    delete updateData.removePhoto;
+    delete updateData.removeVariety;
+    delete updateData.shelfIds; // shelf sync requires user context — skip in admin update
+
+    if (updatePlantDto.removeVariety) {
+      updateData.varietyId = null;
+    }
+
+    if (updatePlantDto.removePhoto && existingPlant.photo) {
+      const oldPhotoPath = `./uploads/plants/${existingPlant.photo}`;
+      if (fs.existsSync(oldPhotoPath)) {
+        fs.unlinkSync(oldPhotoPath);
+      }
+      updateData.photo = null;
+    }
+
+    if (file) {
+      if (existingPlant.photo) {
+        const oldPhotoPath = `./uploads/plants/${existingPlant.photo}`;
+        if (fs.existsSync(oldPhotoPath)) {
+          fs.unlinkSync(oldPhotoPath);
+        }
+      }
+      updateData.photo = file.filename;
+      await compressImage(`./uploads/plants/${file.filename}`);
+    }
+
+    const plant = await this.plantModel
+      .findByIdAndUpdate(id, updateData, { new: true })
+      .populate('genusId')
+      .populate('varietyId')
+      .exec();
+
+    return plant;
+  }
+
   async findOnePublic(id: string): Promise<Plant & { showPlantHistory: boolean; owner?: { _id: string; name: string } }> {
     const plant = await this.plantModel
       .findOne({ _id: id, isArchived: { $ne: true } })

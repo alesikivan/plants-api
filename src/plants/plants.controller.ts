@@ -85,6 +85,26 @@ export class PlantsController {
     return this.plantsService.adminFindAll();
   }
 
+  @Patch('admin/:id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @UseInterceptors(
+    FileInterceptor(
+      'photo',
+      createImageUploadOptions(
+        FILE_UPLOAD_CONFIG.UPLOAD_DIRS.PLANTS,
+        FILE_UPLOAD_CONFIG.FILE_PREFIXES.PLANTS,
+      ),
+    ),
+  )
+  adminUpdate(
+    @Param('id') id: string,
+    @Body() updatePlantDto: UpdatePlantDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.plantsService.adminUpdate(id, updatePlantDto, file);
+  }
+
   @Delete('admin/:id')
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
