@@ -27,8 +27,12 @@ export class BookmarksController {
   }
 
   @Get('plants')
-  async getSavedPlants(@CurrentUser() user: any): Promise<any[]> {
-    return this.bookmarksService.getSavedPlants(user._id.toString());
+  async getSavedPlants(
+    @CurrentUser() user: any,
+    @Query('search') search?: string,
+    @Query('genusId') genusId?: string,
+  ): Promise<any[]> {
+    return this.bookmarksService.getSavedPlants(user._id.toString(), { search, genusId });
   }
 
   @Get('status')

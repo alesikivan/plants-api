@@ -1,6 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+
+function buildCaseInsensitiveRegex(term: string): RegExp {
+  const pattern = term
+    .split('')
+    .map((char) => {
+      const lower = char.toLowerCase();
+      const upper = char.toUpperCase();
+      if (lower === upper) return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return `[${lower}${upper}]`;
+    })
+    .join('');
+  return new RegExp(pattern);
+}
 import { Bookmark, BookmarkDocument } from './schemas/bookmark.schema';
 import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
 import { PlantHistory, PlantHistoryDocument } from '../plants/schemas/plant-history.schema';
@@ -231,7 +244,10 @@ export class BookmarksService {
     }));
   }
 
-  async getSavedPlants(userId: string): Promise<any[]> {
+  async getSavedPlants(
+    userId: string,
+    filters: { search?: string; genusId?: string } = {},
+  ): Promise<any[]> {
     const userObjId = new Types.ObjectId(userId);
 
     const bookmarks = await this.bookmarkModel
@@ -243,7 +259,7 @@ export class BookmarksService {
 
     const plantIds = bookmarks.map((b) => b.itemId as Types.ObjectId);
 
-    const plants = await this.plantModel.aggregate([
+    const pipeline: any[] = [
       { $match: { _id: { $in: plantIds }, isArchived: { $ne: true } } },
       {
         $addFields: {
@@ -267,23 +283,43 @@ export class BookmarksService {
       { $unwind: { path: '$genusDoc', preserveNullAndEmptyArrays: true } },
       { $lookup: { from: 'varieties', localField: 'varietyIdObj', foreignField: '_id', as: 'varietyDoc' } },
       { $unwind: { path: '$varietyDoc', preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          _id: 1,
-          userId: 1,
-          photo: 1,
-          description: 1,
-          purchaseDate: 1,
-          isArchived: 1,
-          sortOrder: 1,
-          shelfIds: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          genusDoc: { _id: 1, nameRu: 1, nameEn: 1, nameLatin: 1 },
-          varietyDoc: { _id: 1, nameRu: 1, nameEn: 1 },
-        },
+    ];
+
+    const postMatch: any = {};
+    if (filters.genusId) {
+      postMatch['genusDoc._id'] = new Types.ObjectId(filters.genusId);
+    }
+    if (filters.search) {
+      const regex = buildCaseInsensitiveRegex(filters.search.trim());
+      postMatch.$or = [
+        { 'genusDoc.nameRu': regex },
+        { 'genusDoc.nameEn': regex },
+        { 'varietyDoc.nameRu': regex },
+        { 'varietyDoc.nameEn': regex },
+      ];
+    }
+    if (Object.keys(postMatch).length > 0) {
+      pipeline.push({ $match: postMatch });
+    }
+
+    pipeline.push({
+      $project: {
+        _id: 1,
+        userId: 1,
+        photo: 1,
+        description: 1,
+        purchaseDate: 1,
+        isArchived: 1,
+        sortOrder: 1,
+        shelfIds: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        genusDoc: { _id: 1, nameRu: 1, nameEn: 1, nameLatin: 1 },
+        varietyDoc: { _id: 1, nameRu: 1, nameEn: 1 },
       },
-    ]);
+    });
+
+    const plants = await this.plantModel.aggregate(pipeline);
 
     const plantMap = new Map<string, any>();
     for (const p of plants) {
