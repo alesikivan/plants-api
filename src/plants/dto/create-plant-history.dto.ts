@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsDateString, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsDateString, IsOptional, MaxLength } from 'class-validator';
 
 export class CreatePlantHistoryDto {
   @IsDateString()
@@ -7,5 +7,6 @@ export class CreatePlantHistoryDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(600)
   comment?: string;
 }

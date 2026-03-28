@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsDateString, IsArray } from 'class-validator';
+import { IsOptional, IsString, IsDateString, IsArray, MaxLength } from 'class-validator';
 
 export class UpdatePlantHistoryDto {
   @IsDateString()
@@ -7,6 +7,7 @@ export class UpdatePlantHistoryDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(600)
   comment?: string;
 
   @IsArray()
