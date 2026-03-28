@@ -297,12 +297,8 @@ export class UsersService {
     // Получаем статистику для каждого пользователя
     const usersWithStats = await Promise.all(
       users.map(async (user) => {
-        const totalPlants = user.showPlants === false
-          ? 0
-          : await this.plantModel.countDocuments({ userId: user._id, isArchived: { $ne: true } }).exec();
-        const totalShelves = user.showShelves === false
-          ? 0
-          : await this.shelfModel.countDocuments({ userId: user._id }).exec();
+        const totalPlants = await this.plantModel.countDocuments({ userId: user._id, isArchived: { $ne: true } }).exec();
+        const totalShelves = await this.shelfModel.countDocuments({ userId: user._id }).exec();
         const followersCount = await this.followModel.countDocuments({ followingId: new Types.ObjectId(user._id.toString()) }).exec();
 
         return new UserProfileWithStatsDto({
@@ -421,18 +417,14 @@ export class UsersService {
 
     const canBypassPrivacy = this.canBypassPrivacy(user, requester);
 
-    // Подсчитываем количество растений пользователя
-    const totalPlants = canBypassPrivacy || user.showPlants !== false
-      ? await this.plantModel.countDocuments({
-          userId: user._id,
-          isArchived: { $ne: true },
-        }).exec()
-      : 0;
+    // Подсчитываем количество растений пользователя (всегда реальное число — приватность скрывает список, не счётчик)
+    const totalPlants = await this.plantModel.countDocuments({
+      userId: user._id,
+      isArchived: { $ne: true },
+    }).exec();
 
-    // Подсчитываем количество полок пользователя
-    const totalShelves = canBypassPrivacy || user.showShelves !== false
-      ? await this.shelfModel.countDocuments({ userId: user._id }).exec()
-      : 0;
+    // Подсчитываем количество полок пользователя (всегда реальное число)
+    const totalShelves = await this.shelfModel.countDocuments({ userId: user._id }).exec();
 
     const followersCount = await this.followModel.countDocuments({ followingId: new Types.ObjectId(user._id.toString()) }).exec();
 
