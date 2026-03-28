@@ -195,12 +195,12 @@ export class PlantsController {
   }
 
   // Plant History endpoints
-  // Max 10 photos per history entry, each max 5MB
+  // Max 3 photos per history entry, each max 5MB
   @Post(':plantId/history')
   @UseInterceptors(
     FilesInterceptor(
       'photos',
-      10,
+      3,
       createImageUploadOptions(
         FILE_UPLOAD_CONFIG.UPLOAD_DIRS.PLANT_HISTORY,
         FILE_UPLOAD_CONFIG.FILE_PREFIXES.PLANT_HISTORY,
@@ -236,12 +236,12 @@ export class PlantsController {
     return this.plantHistoryService.findOne(plantId, historyId, req.user._id);
   }
 
-  // Max 10 photos per history entry, each max 5MB
+  // Max 3 photos per history entry, each max 5MB
   @Patch(':plantId/history/:historyId')
   @UseInterceptors(
     FilesInterceptor(
       'photos',
-      10,
+      3,
       createImageUploadOptions(
         FILE_UPLOAD_CONFIG.UPLOAD_DIRS.PLANT_HISTORY,
         FILE_UPLOAD_CONFIG.FILE_PREFIXES.PLANT_HISTORY,

@@ -6,7 +6,7 @@ import { diskStorage } from 'multer';
  *
  * Weight/Size Limits:
  * - Plants: 5MB per image (main plant photo)
- * - Plant History: 5MB per image (history timeline photos, max 10 photos per entry)
+ * - Plant History: 5MB per image (history timeline photos, max 3 photos per entry)
  * - Shelves: 5MB per image (shelf cover photo)
  * - Wishlist: 5MB per image (wishlist item photo)
  *
