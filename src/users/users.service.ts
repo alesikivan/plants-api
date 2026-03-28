@@ -15,6 +15,8 @@ import { Plant, PlantDocument } from '../plants/schemas/plant.schema';
 import { Shelf, ShelfDocument } from '../shelves/schemas/shelf.schema';
 import { PlantHistory, PlantHistoryDocument } from '../plants/schemas/plant-history.schema';
 import { Wishlist, WishlistDocument } from '../wishlist/schemas/wishlist.schema';
+import { Genus, GenusDocument } from '../genus/schemas/genus.schema';
+import { Variety, VarietyDocument } from '../variety/schemas/variety.schema';
 import { Follow, FollowDocument } from '../follows/schemas/follow.schema';
 import { Bookmark, BookmarkDocument } from '../bookmarks/schemas/bookmark.schema';
 import { Role } from '../common/enums/role.enum';
@@ -33,6 +35,8 @@ export class UsersService {
     @InjectModel(Shelf.name) private shelfModel: Model<ShelfDocument>,
     @InjectModel(PlantHistory.name) private plantHistoryModel: Model<PlantHistoryDocument>,
     @InjectModel(Wishlist.name) private wishlistModel: Model<WishlistDocument>,
+    @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
+    @InjectModel(Variety.name) private varietyModel: Model<VarietyDocument>,
     @InjectModel(Follow.name) private followModel: Model<FollowDocument>,
     @InjectModel(Bookmark.name) private bookmarkModel: Model<BookmarkDocument>,
     private i18n: I18nService,
@@ -664,7 +668,13 @@ export class UsersService {
     );
   }
 
-  async getUserWishlist(userId: string, requester?: UserDocument | null): Promise<any[]> {
+  async getUserWishlist(
+    userId: string,
+    requester?: UserDocument | null,
+    search?: string,
+    page = 1,
+    limit = 20,
+  ): Promise<{ items: any[]; total: number; page: number; totalPages: number }> {
     const user = await this.userModel.findById(userId).exec();
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
@@ -672,12 +682,45 @@ export class UsersService {
     if (!this.canBypassPrivacy(user, requester) && !user.showWishlist) {
       throw new ForbiddenException('Пользователь скрыл свой вишлист');
     }
-    return this.wishlistModel
-      .find({ userId: user._id })
-      .populate('genusId')
-      .populate('varietyId')
-      .sort({ sortOrder: 1, createdAt: -1 })
-      .exec();
+
+    const query: any = { userId: user._id };
+
+    if (search) {
+      const term = search.trim();
+      const pattern = term.split('').map((char) => {
+        const lower = char.toLowerCase();
+        const upper = char.toUpperCase();
+        if (lower === upper) return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return `[${lower}${upper}]`;
+      }).join('');
+      const regex = new RegExp(pattern);
+      const nameQuery = { $or: [{ nameRu: regex }, { nameEn: regex }] };
+      const [matchingGenus, matchingVarieties] = await Promise.all([
+        this.genusModel.find(nameQuery).select('_id').exec(),
+        this.varietyModel.find(nameQuery).select('_id').exec(),
+      ]);
+      const genusIds = matchingGenus.map((g) => g._id.toString());
+      const varietyIds = matchingVarieties.map((v) => v._id.toString());
+      query.$or = [
+        { genusId: { $in: genusIds } },
+        { varietyId: { $in: varietyIds } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.wishlistModel
+        .find(query)
+        .populate('genusId')
+        .populate('varietyId')
+        .sort({ sortOrder: 1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.wishlistModel.countDocuments(query).exec(),
+    ]);
+
+    return { items, total, page, totalPages: Math.ceil(total / limit) };
   }
 
   async getUserShelf(userId: string, shelfId: string, requester?: UserDocument | null): Promise<any> {

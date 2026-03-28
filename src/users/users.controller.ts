@@ -130,9 +130,18 @@ export class UsersController {
   @OptionalAuth()
   async getUserWishlist(
     @Param('userId') userId: string,
-    @CurrentUser() requester?: UserDocument,
+    @CurrentUser() requester: UserDocument | undefined,
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.usersService.getUserWishlist(userId, requester);
+    return this.usersService.getUserWishlist(
+      userId,
+      requester,
+      search,
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 20,
+    );
   }
 
   @Get(':userId/shelves')

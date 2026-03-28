@@ -9,6 +9,8 @@ import { PlantHistory, PlantHistorySchema } from '../plants/schemas/plant-histor
 import { Wishlist, WishlistSchema } from '../wishlist/schemas/wishlist.schema';
 import { Follow, FollowSchema } from '../follows/schemas/follow.schema';
 import { Bookmark, BookmarkSchema } from '../bookmarks/schemas/bookmark.schema';
+import { Genus, GenusSchema } from '../genus/schemas/genus.schema';
+import { Variety, VarietySchema } from '../variety/schemas/variety.schema';
 import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
@@ -22,6 +24,8 @@ import { TelegramModule } from '../telegram/telegram.module';
       { name: Wishlist.name, schema: WishlistSchema },
       { name: Follow.name, schema: FollowSchema },
       { name: Bookmark.name, schema: BookmarkSchema },
+      { name: Genus.name, schema: GenusSchema },
+      { name: Variety.name, schema: VarietySchema },
     ]),
   ],
   controllers: [UsersController],
