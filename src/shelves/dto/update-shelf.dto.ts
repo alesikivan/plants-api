@@ -1,9 +1,10 @@
-import { IsOptional, IsString, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class UpdateShelfDto {
   @IsString()
   @IsOptional()
+  @MaxLength(20)
   name?: string;
 
   @Transform(({ value }) => {
