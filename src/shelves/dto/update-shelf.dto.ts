@@ -4,7 +4,7 @@ import { Transform } from 'class-transformer';
 export class UpdateShelfDto {
   @IsString()
   @IsOptional()
-  @MaxLength(20)
+  @MaxLength(30)
   name?: string;
 
   @Transform(({ value }) => {
