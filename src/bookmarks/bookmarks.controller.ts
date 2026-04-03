@@ -53,11 +53,15 @@ export class BookmarksController {
     @CurrentUser() user: any,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @Query('genusId') genusId?: string,
+    @Query('varietyId') varietyId?: string,
   ): Promise<FeedResponse> {
     return this.bookmarksService.getSavedFeed(
       user._id.toString(),
       cursor,
       limit ? Math.min(parseInt(limit, 10), 50) : 20,
+      genusId,
+      varietyId,
     );
   }
 }

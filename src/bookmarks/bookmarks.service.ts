@@ -110,6 +110,8 @@ export class BookmarksService {
     userId: string,
     cursor?: string,
     limit = 20,
+    genusId?: string,
+    varietyId?: string,
   ): Promise<FeedResponse> {
     const userObjId = new Types.ObjectId(userId);
     const decoded = this.decodeCursor(cursor);
@@ -144,8 +146,8 @@ export class BookmarksService {
       .map((b) => b.itemId as Types.ObjectId);
 
     const [plantItems, historyItems] = await Promise.all([
-      plantIds.length > 0 ? this.fetchPlantItemsByIds(plantIds) : Promise.resolve([]),
-      historyIds.length > 0 ? this.fetchHistoryItemsByIds(historyIds) : Promise.resolve([]),
+      plantIds.length > 0 ? this.fetchPlantItemsByIds(plantIds, genusId, varietyId) : Promise.resolve([]),
+      historyIds.length > 0 ? this.fetchHistoryItemsByIds(historyIds, genusId, varietyId) : Promise.resolve([]),
     ]);
 
     // Build lookup map from itemId → FeedItem
@@ -174,7 +176,7 @@ export class BookmarksService {
     return { items: orderedItems, nextCursor, hasMore };
   }
 
-  private async fetchPlantItemsByIds(ids: Types.ObjectId[]): Promise<FeedPlantItem[]> {
+  private async fetchPlantItemsByIds(ids: Types.ObjectId[], genusId?: string, varietyId?: string): Promise<FeedPlantItem[]> {
     const results = await this.plantModel.aggregate([
       { $match: { _id: { $in: ids }, isArchived: { $ne: true } } },
       {
@@ -209,6 +211,8 @@ export class BookmarksService {
       { $unwind: { path: '$genus', preserveNullAndEmptyArrays: true } },
       { $lookup: { from: 'varieties', localField: 'varietyIdObj', foreignField: '_id', as: 'variety' } },
       { $unwind: { path: '$variety', preserveNullAndEmptyArrays: true } },
+      ...(genusId ? [{ $match: { 'genus._id': new Types.ObjectId(genusId) } }] : []),
+      ...(varietyId ? [{ $match: { 'variety._id': new Types.ObjectId(varietyId) } }] : []),
       {
         $project: {
           _id: 1, createdAt: 1, photo: 1, description: 1,
@@ -361,7 +365,7 @@ export class BookmarksService {
     return { isBookmarked: !!existing };
   }
 
-  private async fetchHistoryItemsByIds(ids: Types.ObjectId[]): Promise<FeedHistoryItem[]> {
+  private async fetchHistoryItemsByIds(ids: Types.ObjectId[], genusId?: string, varietyId?: string): Promise<FeedHistoryItem[]> {
     const results = await this.plantHistoryModel.aggregate([
       { $match: { _id: { $in: ids } } },
       {
@@ -410,6 +414,8 @@ export class BookmarksService {
       { $unwind: { path: '$genus', preserveNullAndEmptyArrays: true } },
       { $lookup: { from: 'varieties', localField: 'plantVarietyIdObj', foreignField: '_id', as: 'variety' } },
       { $unwind: { path: '$variety', preserveNullAndEmptyArrays: true } },
+      ...(genusId ? [{ $match: { 'genus._id': new Types.ObjectId(genusId) } }] : []),
+      ...(varietyId ? [{ $match: { 'variety._id': new Types.ObjectId(varietyId) } }] : []),
       {
         $project: {
           _id: 1, createdAt: 1, date: 1, comment: 1, photos: 1,

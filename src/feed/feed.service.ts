@@ -111,6 +111,8 @@ export class FeedService {
     mode: 'global' | 'following',
     cursor?: string,
     limit = 20,
+    genusId?: string,
+    varietyId?: string,
   ): Promise<FeedResponse> {
     const decoded = this.decodeCursor(cursor);
     const cursorMatch = this.buildCursorMatch(decoded);
@@ -129,8 +131,8 @@ export class FeedService {
     const fetchLimit = limit + 1;
 
     const [plantItems, historyItems] = await Promise.all([
-      this.fetchPlantItems(followingIds, cursorMatch, fetchLimit),
-      this.fetchHistoryItems(followingIds, cursorMatch, fetchLimit),
+      this.fetchPlantItems(followingIds, cursorMatch, fetchLimit, genusId, varietyId),
+      this.fetchHistoryItems(followingIds, cursorMatch, fetchLimit, genusId, varietyId),
     ]);
 
     const merged = [...plantItems, ...historyItems].sort((a, b) => {
@@ -189,6 +191,8 @@ export class FeedService {
     followingIds: Types.ObjectId[] | null,
     cursorMatch: any,
     limit: number,
+    genusId?: string,
+    varietyId?: string,
   ): Promise<FeedPlantItem[]> {
     const initialMatch: any = { isArchived: { $ne: true }, ...cursorMatch };
     if (followingIds) {
@@ -261,6 +265,8 @@ export class FeedService {
         },
       },
       { $unwind: { path: '$variety', preserveNullAndEmptyArrays: true } },
+      ...(genusId ? [{ $match: { 'genus._id': new Types.ObjectId(genusId) } }] : []),
+      ...(varietyId ? [{ $match: { 'variety._id': new Types.ObjectId(varietyId) } }] : []),
       { $sort: { createdAt: -1, _id: -1 } },
       { $limit: limit },
       {
@@ -305,6 +311,8 @@ export class FeedService {
     followingIds: Types.ObjectId[] | null,
     cursorMatch: any,
     limit: number,
+    genusId?: string,
+    varietyId?: string,
   ): Promise<FeedHistoryItem[]> {
     const initialMatch: any = { ...cursorMatch };
     if (followingIds) {
@@ -395,6 +403,8 @@ export class FeedService {
         },
       },
       { $unwind: { path: '$variety', preserveNullAndEmptyArrays: true } },
+      ...(genusId ? [{ $match: { 'genus._id': new Types.ObjectId(genusId) } }] : []),
+      ...(varietyId ? [{ $match: { 'variety._id': new Types.ObjectId(varietyId) } }] : []),
       { $sort: { createdAt: -1, _id: -1 } },
       { $limit: limit },
       {

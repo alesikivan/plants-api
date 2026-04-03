@@ -13,12 +13,16 @@ export class FeedController {
     @CurrentUser() user: any,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @Query('genusId') genusId?: string,
+    @Query('varietyId') varietyId?: string,
   ): Promise<FeedResponse> {
     return this.feedService.getFeed(
       user._id.toString(),
       'global',
       cursor,
       limit ? Math.min(parseInt(limit, 10), 50) : 20,
+      genusId,
+      varietyId,
     );
   }
 
@@ -27,12 +31,16 @@ export class FeedController {
     @CurrentUser() user: any,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @Query('genusId') genusId?: string,
+    @Query('varietyId') varietyId?: string,
   ): Promise<FeedResponse> {
     return this.feedService.getFeed(
       user._id.toString(),
       'following',
       cursor,
       limit ? Math.min(parseInt(limit, 10), 50) : 20,
+      genusId,
+      varietyId,
     );
   }
 }
