@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class UpdateWishlistDto {
@@ -19,6 +19,11 @@ export class UpdateWishlistDto {
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   removePhoto?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  note?: string;
 
   @IsOptional()
   photo?: any;

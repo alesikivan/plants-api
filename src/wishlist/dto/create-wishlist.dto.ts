@@ -1,4 +1,4 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, MaxLength } from 'class-validator';
 
 export class CreateWishlistDto {
   @IsString()
@@ -7,6 +7,11 @@ export class CreateWishlistDto {
   @IsOptional()
   @IsString()
   varietyId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  note?: string;
 
   @IsOptional()
   photo?: any;
