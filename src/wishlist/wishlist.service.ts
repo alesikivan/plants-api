@@ -70,7 +70,7 @@ export class WishlistService {
     if (createWishlistDto.sourceUserId && createWishlistDto.sourceUsername) {
       // Telegram notification
       this.telegramService
-        .notifyWishlistSavedFromFeed(userId, username, createWishlistDto.sourceUserId, createWishlistDto.sourceUsername, genusName)
+        .notifyWishlistSavedFromFeed(userId, username, createWishlistDto.sourceUserId, createWishlistDto.sourceUsername, String(wishlist._id), genusName)
         .catch(() => {});
 
       // In-app notification for plant owner

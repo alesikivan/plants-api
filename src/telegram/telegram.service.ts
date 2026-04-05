@@ -172,21 +172,17 @@ export class TelegramService {
     currentUsername: string,
     sourceUserId: string,
     sourceUsername: string,
+    wishlistId: string,
     genusName: string
   ): Promise<void> {
     // Notification to admin/general chat
+    const base = this.configService.get<string>('frontendUrl') || '';
+    const link = `<a href="${base}/dashboard?wishlistId=${wishlistId}">${genusName}</a>`;
     await this.sendMessage(
       `<b>💾 Растение сохранено в wishlist</b>\n` +
       `Сохранил: ${this.userLink(currentUserId, currentUsername)}\n` +
-      `Растение: ${genusName}\n` +
+      `Растение: ${link}\n` +
       `Владелец: ${this.userLink(sourceUserId, sourceUsername)}`,
-    );
-
-    // Notification to plant owner
-    await this.sendMessage(
-      `<b>💾 Ваше растение добавили в wishlist</b>\n` +
-      `Пользователь: ${this.userLink(currentUserId, currentUsername)}\n` +
-      `Растение: ${genusName}`,
     );
   }
 }
