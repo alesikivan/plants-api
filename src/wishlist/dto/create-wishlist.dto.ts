@@ -15,4 +15,12 @@ export class CreateWishlistDto {
 
   @IsOptional()
   photo?: any;
+
+  @IsOptional()
+  @IsString()
+  sourceUserId?: string;
+
+  @IsOptional()
+  @IsString()
+  sourceUsername?: string;
 }

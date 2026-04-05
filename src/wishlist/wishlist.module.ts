@@ -6,6 +6,7 @@ import { Wishlist, WishlistSchema } from './schemas/wishlist.schema';
 import { Genus, GenusSchema } from '../genus/schemas/genus.schema';
 import { Variety, VarietySchema } from '../variety/schemas/variety.schema';
 import { TelegramModule } from '../telegram/telegram.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { TelegramModule } from '../telegram/telegram.module';
       { name: Variety.name, schema: VarietySchema },
     ]),
     TelegramModule,
+    NotificationsModule,
   ],
   controllers: [WishlistController],
   providers: [WishlistService],

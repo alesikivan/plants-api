@@ -149,9 +149,9 @@ export class TelegramService {
   }
 
   async notifyAiRecognition(
-    userId: string, username: string, 
-    type: 'genus' | 'variety', 
-    query: string, 
+    userId: string, username: string,
+    type: 'genus' | 'variety',
+    query: string,
     suggestion: { nameRu: string; nameEn: string },
     genus?: { nameRu: string; nameEn: string }
   ): Promise<void> {
@@ -161,9 +161,32 @@ export class TelegramService {
     await this.sendMessage(
       `<b>${emoji} ИИ распознавание - ${typeLabel}</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
-      `${genusLine}` + 
+      `${genusLine}` +
       `Запрос: <code>${query}</code>\n` +
       `Результат: ${suggestion.nameRu} / ${suggestion.nameEn}`,
+    );
+  }
+
+  async notifyWishlistSavedFromFeed(
+    currentUserId: string,
+    currentUsername: string,
+    sourceUserId: string,
+    sourceUsername: string,
+    genusName: string
+  ): Promise<void> {
+    // Notification to admin/general chat
+    await this.sendMessage(
+      `<b>💾 Растение сохранено в wishlist</b>\n` +
+      `Сохранил: ${this.userLink(currentUserId, currentUsername)}\n` +
+      `Растение: ${genusName}\n` +
+      `Владелец: ${this.userLink(sourceUserId, sourceUsername)}`,
+    );
+
+    // Notification to plant owner
+    await this.sendMessage(
+      `<b>💾 Ваше растение добавили в wishlist</b>\n` +
+      `Пользователь: ${this.userLink(currentUserId, currentUsername)}\n` +
+      `Растение: ${genusName}`,
     );
   }
 }

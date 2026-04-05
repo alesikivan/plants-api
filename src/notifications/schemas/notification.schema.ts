@@ -3,7 +3,7 @@ import { Document, Types } from 'mongoose';
 
 export type NotificationDocument = Notification & Document;
 
-export type NotificationType = 'new_follower' | 'new_bookmark_plant' | 'new_bookmark_history' | 'system';
+export type NotificationType = 'new_follower' | 'new_bookmark_plant' | 'new_bookmark_history' | 'wishlist_saved' | 'system';
 
 @Schema({ timestamps: { createdAt: true, updatedAt: false } })
 export class Notification {

@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { I18nService } from 'nestjs-i18n';
 import { Wishlist, WishlistDocument } from './schemas/wishlist.schema';
 import { TelegramService } from '../telegram/telegram.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 function buildCaseInsensitiveRegex(term: string): RegExp {
   const pattern = term
@@ -34,6 +35,7 @@ export class WishlistService {
     @InjectModel(Variety.name) private varietyModel: Model<VarietyDocument>,
     private readonly i18n: I18nService,
     private readonly telegramService: TelegramService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -47,6 +49,10 @@ export class WishlistService {
       userId,
     };
 
+    // Remove sourceUserId and sourceUsername from wishlistData
+    delete wishlistData.sourceUserId;
+    delete wishlistData.sourceUsername;
+
     if (file) {
       wishlistData.photo = file.filename;
       await compressImage(`./uploads/wishlist/${file.filename}`);
@@ -59,7 +65,25 @@ export class WishlistService {
       ? await this.genusModel.findById(createWishlistDto.genusId).exec()
       : null;
     const genusName = genus?.nameRu || genus?.nameEn || 'Unknown';
-    this.telegramService.notifyWishlistCreated(userId, username, String(wishlist._id), genusName).catch(() => {});
+
+    // If sourceUserId is provided (saved from feed), notify about it
+    if (createWishlistDto.sourceUserId && createWishlistDto.sourceUsername) {
+      // Telegram notification
+      this.telegramService
+        .notifyWishlistSavedFromFeed(userId, username, createWishlistDto.sourceUserId, createWishlistDto.sourceUsername, genusName)
+        .catch(() => {});
+
+      // In-app notification for plant owner
+      await this.notificationsService.create(
+        createWishlistDto.sourceUserId,
+        'wishlist_saved',
+        userId,
+        { genusName },
+      );
+    } else {
+      // Otherwise, notify about regular wishlist creation
+      this.telegramService.notifyWishlistCreated(userId, username, String(wishlist._id), genusName).catch(() => {});
+    }
 
     return wishlist;
   }
