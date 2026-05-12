@@ -56,7 +56,7 @@ export class PlantHistoryService {
     const history = new this.plantHistoryModel(historyData);
     await history.save();
 
-    if (username) {
+    if (username && !createPlantHistoryDto.skipNotification) {
       const genus = await this.genusModel.findById(plant.genusId).select('nameRu nameEn').lean();
       const genusName = genus?.nameRu || genus?.nameEn || String(plant.genusId);
       this.telegramService.notifyHistoryCreated(userId, username, plantId, genusName).catch(() => {});

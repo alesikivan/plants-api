@@ -71,9 +71,12 @@ export class TelegramService {
     return `<a href="${base}/profile/${userId}/shelves/${shelfId}">${shelfName}</a>`;
   }
 
-  async notifyPlantCreated(userId: string, username: string, plantId: string, genusName: string): Promise<void> {
+  async notifyPlantCreated(userId: string, username: string, plantId: string, genusName: string, withHistory = false): Promise<void> {
+    const title = withHistory
+      ? '🌱📖 Новое растение добавлено сразу с историей'
+      : '🌱 Новое растение добавлено';
     await this.sendMessage(
-      `<b>🌱 Новое растение добавлено</b>\n` +
+      `<b>${title}</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
       `Растение: ${this.plantLink(plantId, genusName, userId)}`,
     );

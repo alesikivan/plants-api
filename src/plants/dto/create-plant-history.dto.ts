@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, IsDateString, IsOptional, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsString, IsDateString, IsOptional, MaxLength, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreatePlantHistoryDto {
   @IsDateString()
@@ -9,4 +10,9 @@ export class CreatePlantHistoryDto {
   @IsOptional()
   @MaxLength(600)
   comment?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  skipNotification?: boolean;
 }
