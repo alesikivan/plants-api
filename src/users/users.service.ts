@@ -280,13 +280,26 @@ export class UsersService {
     }
   }
 
-  async searchUsers(query?: string, sort?: string): Promise<UserProfileWithStatsDto[]> {
+  async searchUsers(
+    query?: string,
+    sort?: string,
+    page: number = 1,
+    limit: number = 24,
+  ): Promise<{
+    items: UserProfileWithStatsDto[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const safePage = Math.max(1, Math.floor(page) || 1);
+    const safeLimit = Math.min(100, Math.max(1, Math.floor(limit) || 24));
+
     let filter: Record<string, any> = { isBlocked: { $ne: true } };
 
     if (query && query.trim()) {
       filter = {
         ...filter,
-        name: { $regex: query.trim(), $options: 'i' }
+        name: { $regex: query.trim(), $options: 'i' },
       };
     }
 
@@ -294,16 +307,28 @@ export class UsersService {
       newest: { createdAt: -1 },
       oldest: { createdAt: 1 },
     };
+    const isMostPlants = sort === 'mostPlants';
     const mongoSort = sortOptions[sort] || { createdAt: -1 };
 
-    const users = await this.userModel.find(filter).sort(mongoSort).exec();
+    const total = await this.userModel.countDocuments(filter).exec();
 
-    // Получаем статистику для каждого пользователя
+    // Для mostPlants сортируем после расчёта статистики, поэтому грузим всех и режем в памяти.
+    // Для newest/oldest используем skip/limit на стороне Mongo.
+    const usersQuery = this.userModel.find(filter).sort(mongoSort);
+    if (!isMostPlants) {
+      usersQuery.skip((safePage - 1) * safeLimit).limit(safeLimit);
+    }
+    const users = await usersQuery.exec();
+
     const usersWithStats = await Promise.all(
       users.map(async (user) => {
-        const totalPlants = await this.plantModel.countDocuments({ userId: user._id, isArchived: { $ne: true } }).exec();
+        const totalPlants = await this.plantModel
+          .countDocuments({ userId: user._id, isArchived: { $ne: true } })
+          .exec();
         const totalShelves = await this.shelfModel.countDocuments({ userId: user._id }).exec();
-        const followersCount = await this.followModel.countDocuments({ followingId: new Types.ObjectId(user._id.toString()) }).exec();
+        const followersCount = await this.followModel
+          .countDocuments({ followingId: new Types.ObjectId(user._id.toString()) })
+          .exec();
 
         return new UserProfileWithStatsDto({
           id: user._id.toString(),
@@ -325,15 +350,22 @@ export class UsersService {
             followersCount,
           },
         });
-      })
+      }),
     );
 
-    // Сортировка по количеству растений — после получения статистики
-    if (sort === 'mostPlants') {
+    let items = usersWithStats;
+    if (isMostPlants) {
       usersWithStats.sort((a, b) => b.stats.totalPlants - a.stats.totalPlants);
+      const start = (safePage - 1) * safeLimit;
+      items = usersWithStats.slice(start, start + safeLimit);
     }
 
-    return usersWithStats;
+    return {
+      items,
+      total,
+      page: safePage,
+      totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+    };
   }
 
   async getSeoSitemap(): Promise<SeoSitemapUserDto[]> {

@@ -34,8 +34,20 @@ export class UsersController {
   async searchUsers(
     @Query('q') query?: string,
     @Query('sort') sort?: string,
-  ): Promise<UserProfileWithStatsDto[]> {
-    return this.usersService.searchUsers(query, sort);
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<{
+    items: UserProfileWithStatsDto[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    return this.usersService.searchUsers(
+      query,
+      sort,
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 24,
+    );
   }
 
   @Get('seo/sitemap')
