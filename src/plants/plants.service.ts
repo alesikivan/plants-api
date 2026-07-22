@@ -92,7 +92,7 @@ export class PlantsService {
     if (username) {
       const genus = await this.genusModel.findById(plant.genusId).select('nameRu nameEn').lean();
       const genusName = genus?.nameRu || genus?.nameEn || String(plant.genusId);
-      this.telegramService.notifyPlantCreated(userId, username, String(plant._id), genusName, !!createPlantDto.withFirstHistory).catch(() => {});
+      this.telegramService.notifyPlantCreated(userId, username, String(plant._id), genusName, !!createPlantDto.withFirstHistory, plant.photo).catch(() => {});
     }
 
     return plant;

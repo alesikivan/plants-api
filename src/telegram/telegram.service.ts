@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class TelegramService {
@@ -39,6 +41,48 @@ export class TelegramService {
     }
   }
 
+  /**
+   * Отправляет локальный файл-изображение с подписью через Telegram sendPhoto (multipart upload).
+   * Если файла нет или произошла ошибка — откатывается на обычное текстовое сообщение (caption).
+   */
+  async sendPhoto(photoPath: string, caption: string): Promise<void> {
+    if (!this.botToken || !this.chatId) {
+      this.logger.warn('Telegram not configured, skipping notification');
+      return;
+    }
+
+    if (!photoPath || !fs.existsSync(photoPath)) {
+      await this.sendMessage(caption);
+      return;
+    }
+
+    try {
+      const buffer = await fs.promises.readFile(photoPath);
+      const form = new FormData();
+      form.append('chat_id', this.chatId);
+      form.append('caption', caption);
+      form.append('parse_mode', 'HTML');
+      form.append(
+        'photo',
+        new Blob([buffer]),
+        path.basename(photoPath),
+      );
+
+      const url = `https://api.telegram.org/bot${this.botToken}/sendPhoto`;
+      const response = await fetch(url, { method: 'POST', body: form });
+
+      if (!response.ok) {
+        const error = await response.text();
+        this.logger.error(`Telegram sendPhoto error: ${error}`);
+        // Фолбэк на текст, чтобы уведомление хотя бы дошло
+        await this.sendMessage(caption);
+      }
+    } catch (err) {
+      this.logger.error('Failed to send Telegram photo notification', err);
+      await this.sendMessage(caption);
+    }
+  }
+
   async notifyUserRegistered(username: string, email: string, userAgent = ''): Promise<void> {
     await this.sendMessage(
       `<b>👤 Новый пользователь зарегистрировался</b>\n` +
@@ -71,15 +115,20 @@ export class TelegramService {
     return `<a href="${base}/profile/${userId}/shelves/${shelfId}">${shelfName}</a>`;
   }
 
-  async notifyPlantCreated(userId: string, username: string, plantId: string, genusName: string, withHistory = false): Promise<void> {
+  async notifyPlantCreated(userId: string, username: string, plantId: string, genusName: string, withHistory = false, photoFilename?: string): Promise<void> {
     const title = withHistory
       ? '🌱📖 Новое растение добавлено сразу с историей'
       : '🌱 Новое растение добавлено';
-    await this.sendMessage(
+    const caption =
       `<b>${title}</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
-      `Растение: ${this.plantLink(plantId, genusName, userId)}`,
-    );
+      `Растение: ${this.plantLink(plantId, genusName, userId)}`;
+
+    if (photoFilename) {
+      await this.sendPhoto(`./uploads/plants/${photoFilename}`, caption);
+    } else {
+      await this.sendMessage(caption);
+    }
   }
 
   async notifyPlantUpdated(userId: string, username: string, plantId: string, genusName: string): Promise<void> {
