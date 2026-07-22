@@ -83,6 +83,61 @@ export class TelegramService {
     }
   }
 
+  /**
+   * Отправляет несколько локальных изображений одним альбомом через sendMediaGroup.
+   * Подпись вешается на первое фото. Telegram принимает максимум 10 файлов за раз.
+   * Фолбэки: одно фото -> sendPhoto, ошибка/нет файлов -> sendMessage.
+   */
+  async sendMediaGroup(photoPaths: string[], caption: string): Promise<void> {
+    if (!this.botToken || !this.chatId) {
+      this.logger.warn('Telegram not configured, skipping notification');
+      return;
+    }
+
+    const existing = (photoPaths || []).filter(p => p && fs.existsSync(p)).slice(0, 10);
+
+    if (existing.length === 0) {
+      await this.sendMessage(caption);
+      return;
+    }
+
+    if (existing.length === 1) {
+      await this.sendPhoto(existing[0], caption);
+      return;
+    }
+
+    try {
+      const form = new FormData();
+      form.append('chat_id', this.chatId);
+
+      const media = await Promise.all(
+        existing.map(async (photoPath, index) => {
+          const buffer = await fs.promises.readFile(photoPath);
+          const field = `photo${index}`;
+          form.append(field, new Blob([buffer]), path.basename(photoPath));
+          return index === 0
+            ? { type: 'photo', media: `attach://${field}`, caption, parse_mode: 'HTML' }
+            : { type: 'photo', media: `attach://${field}` };
+        }),
+      );
+
+      form.append('media', JSON.stringify(media));
+
+      const url = `https://api.telegram.org/bot${this.botToken}/sendMediaGroup`;
+      const response = await fetch(url, { method: 'POST', body: form });
+
+      if (!response.ok) {
+        const error = await response.text();
+        this.logger.error(`Telegram sendMediaGroup error: ${error}`);
+        // Фолбэк: хотя бы первое фото с подписью
+        await this.sendPhoto(existing[0], caption);
+      }
+    } catch (err) {
+      this.logger.error('Failed to send Telegram media group notification', err);
+      await this.sendPhoto(existing[0], caption);
+    }
+  }
+
   async notifyUserRegistered(username: string, email: string, userAgent = ''): Promise<void> {
     await this.sendMessage(
       `<b>👤 Новый пользователь зарегистрировался</b>\n` +
@@ -139,36 +194,56 @@ export class TelegramService {
     );
   }
 
-  async notifyHistoryCreated(userId: string, username: string, plantId: string, genusName: string): Promise<void> {
-    await this.sendMessage(
+  async notifyHistoryCreated(userId: string, username: string, plantId: string, genusName: string, photoFilenames: string[] = []): Promise<void> {
+    const caption =
       `<b>📖 Добавлена запись в историю растения</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
-      `Растение: ${this.plantLink(plantId, genusName, userId)}`,
-    );
+      `Растение: ${this.plantLink(plantId, genusName, userId)}`;
+
+    if (photoFilenames.length > 0) {
+      await this.sendMediaGroup(photoFilenames.map(p => `./uploads/plant-history/${p}`), caption);
+    } else {
+      await this.sendMessage(caption);
+    }
   }
 
-  async notifyHistoryUpdated(userId: string, username: string, plantId: string, genusName: string): Promise<void> {
-    await this.sendMessage(
+  async notifyHistoryUpdated(userId: string, username: string, plantId: string, genusName: string, photoFilenames: string[] = []): Promise<void> {
+    const caption =
       `<b>✏️ История растения обновлена</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
-      `Растение: ${this.plantLink(plantId, genusName, userId)}`,
-    );
+      `Растение: ${this.plantLink(plantId, genusName, userId)}`;
+
+    if (photoFilenames.length > 0) {
+      await this.sendMediaGroup(photoFilenames.map(p => `./uploads/plant-history/${p}`), caption);
+    } else {
+      await this.sendMessage(caption);
+    }
   }
 
-  async notifyShelfCreated(userId: string, username: string, shelfId: string, shelfName: string): Promise<void> {
-    await this.sendMessage(
+  async notifyShelfCreated(userId: string, username: string, shelfId: string, shelfName: string, photoFilename?: string): Promise<void> {
+    const caption =
       `<b>🗄 Новая полка создана</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
-      `Полка: ${this.shelfLink(shelfId, shelfName, userId)}`,
-    );
+      `Полка: ${this.shelfLink(shelfId, shelfName, userId)}`;
+
+    if (photoFilename) {
+      await this.sendPhoto(`./uploads/shelves/${photoFilename}`, caption);
+    } else {
+      await this.sendMessage(caption);
+    }
   }
 
-  async notifyShelfUpdated(userId: string, username: string, shelfId: string, shelfName: string): Promise<void> {
-    await this.sendMessage(
+  async notifyShelfUpdated(userId: string, username: string, shelfId: string, shelfName: string, photoFilename?: string): Promise<void> {
+    const caption =
       `<b>✏️ Полка обновлена</b>\n` +
       `Пользователь: ${this.userLink(userId, username)}\n` +
-      `Полка: ${this.shelfLink(shelfId, shelfName, userId)}`,
-    );
+      `Полка: ${this.shelfLink(shelfId, shelfName, userId)}`;
+
+    if (photoFilename) {
+      await this.sendPhoto(`./uploads/shelves/${photoFilename}`, caption);
+    } else {
+      await this.sendMessage(caption);
+    }
   }
 
   async notifyWishlistCreated(userId: string, username: string, wishlistId: string, genusName: string): Promise<void> {

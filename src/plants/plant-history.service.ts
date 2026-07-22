@@ -59,7 +59,7 @@ export class PlantHistoryService {
     if (username && !createPlantHistoryDto.skipNotification) {
       const genus = await this.genusModel.findById(plant.genusId).select('nameRu nameEn').lean();
       const genusName = genus?.nameRu || genus?.nameEn || String(plant.genusId);
-      this.telegramService.notifyHistoryCreated(userId, username, plantId, genusName).catch(() => {});
+      this.telegramService.notifyHistoryCreated(userId, username, plantId, genusName, history.photos || []).catch(() => {});
     }
 
     return history;
@@ -147,7 +147,7 @@ export class PlantHistoryService {
       const plant = await this.plantModel.findById(plantId).select('genusId').lean();
       const genus = plant ? await this.genusModel.findById(plant.genusId).select('nameRu nameEn').lean() : null;
       const genusName = genus?.nameRu || genus?.nameEn || plantId;
-      this.telegramService.notifyHistoryUpdated(userId, username, plantId, genusName).catch(() => {});
+      this.telegramService.notifyHistoryUpdated(userId, username, plantId, genusName, history?.photos || []).catch(() => {});
     }
 
     return history;

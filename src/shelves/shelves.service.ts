@@ -52,7 +52,7 @@ export class ShelvesService {
     const saved = await shelf.save();
 
     if (username) {
-      this.telegramService.notifyShelfCreated(userId, username, String(saved._id), createShelfDto.name).catch(() => {});
+      this.telegramService.notifyShelfCreated(userId, username, String(saved._id), createShelfDto.name, saved.photo).catch(() => {});
     }
 
     return saved;
@@ -201,7 +201,7 @@ export class ShelvesService {
 
     if (username && shelf) {
       const shelfName = shelf.name || existingShelf.name;
-      this.telegramService.notifyShelfUpdated(userId, username, String(shelf._id), shelfName).catch(() => {});
+      this.telegramService.notifyShelfUpdated(userId, username, String(shelf._id), shelfName, shelf.photo).catch(() => {});
     }
 
     return shelf;
