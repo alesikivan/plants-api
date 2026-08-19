@@ -45,6 +45,16 @@ export class User {
   @Prop({ type: Boolean, default: false })
   isBlocked: boolean;
 
+  // Telegram community: auto-publish settings (opt-in via banner)
+  @Prop({ type: Boolean, default: false })
+  telegramPublishPlants: boolean;
+
+  @Prop({ type: Boolean, default: false })
+  telegramPublishHistory: boolean;
+
+  @Prop({ type: Boolean, default: false })
+  telegramBannerDismissed: boolean;
+
   @Prop({ type: Boolean, default: true })
   isEmailVerified: boolean;
 

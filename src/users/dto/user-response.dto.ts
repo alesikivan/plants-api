@@ -12,6 +12,9 @@ export class UserResponseDto {
   showPlantHistory: boolean;
   showWishlist: boolean;
   isBlocked: boolean;
+  telegramPublishPlants: boolean;
+  telegramPublishHistory: boolean;
+  telegramBannerDismissed: boolean;
   bio?: string;
   avatar?: string;
   socialLinks?: SocialLink[];

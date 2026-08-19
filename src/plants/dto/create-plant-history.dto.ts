@@ -15,4 +15,10 @@ export class CreatePlantHistoryDto {
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
   skipNotification?: boolean;
+
+  /** Per-post opt-out of Telegram community publishing (only meaningful when user has auto-publish enabled) */
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  publishToTelegram?: boolean;
 }

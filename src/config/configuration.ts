@@ -29,6 +29,15 @@ export default () => {
     telegram: {
       botToken: process.env.TELEGRAM_BOT_TOKEN,
       chatId: process.env.TELEGRAM_CHAT_ID,
+      // Community group (chat) where users' plants/history are auto-published
+      communityChatId: process.env.TELEGRAM_COMMUNITY_CHAT_ID,
+      // Optional topic ids (group with Topics enabled): plants and history go to separate topics
+      communityPlantsThreadId: process.env.TELEGRAM_COMMUNITY_PLANTS_THREAD_ID,
+      communityHistoryThreadId: process.env.TELEGRAM_COMMUNITY_HISTORY_THREAD_ID,
+      communityUrl: process.env.TELEGRAM_COMMUNITY_URL,
+      // Base URL for links inside community posts (defaults to FRONTEND_URL). Telegram does not render localhost links,
+      // so locally you may point this to a public domain for visual testing.
+      communitySiteUrl: process.env.TELEGRAM_COMMUNITY_SITE_URL,
     },
     smtp: {
       host: process.env.SMTP_HOST,

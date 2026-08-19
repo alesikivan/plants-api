@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Plant, PlantDocument } from './schemas/plant.schema';
@@ -60,9 +60,11 @@ export class PlantsService {
     file: Express.Multer.File | undefined,
     userId: string,
     username?: string,
+    currentUser?: Pick<User, 'telegramPublishPlants' | 'showPlants'>,
   ): Promise<Plant> {
+    const { publishToTelegram, withFirstHistory, ...plantFields } = createPlantDto;
     const plantData: any = {
-      ...createPlantDto,
+      ...plantFields,
       userId,
       sortOrder: 0,
     };
@@ -92,10 +94,79 @@ export class PlantsService {
     if (username) {
       const genus = await this.genusModel.findById(plant.genusId).select('nameRu nameEn').lean();
       const genusName = genus?.nameRu || genus?.nameEn || String(plant.genusId);
-      this.telegramService.notifyPlantCreated(userId, username, String(plant._id), genusName, !!createPlantDto.withFirstHistory, plant.photo).catch(() => {});
+      this.telegramService.notifyPlantCreated(userId, username, String(plant._id), genusName, !!withFirstHistory, plant.photo).catch(() => {});
+
+      // Auto-publish to Telegram community: user opted in, plants are public, and not opted out for this post
+      const shouldPublish =
+        currentUser?.telegramPublishPlants === true &&
+        currentUser?.showPlants !== false &&
+        publishToTelegram !== false;
+      if (shouldPublish) {
+        const variety = plant.varietyId
+          ? await this.varietyModel.findById(plant.varietyId).select('nameRu nameEn').lean()
+          : null;
+        this.telegramService.publishPlantToCommunity({
+          userId: String(userId),
+          username,
+          plantId: String(plant._id),
+          genusName,
+          varietyName: variety?.nameRu || variety?.nameEn || undefined,
+          description: plant.description,
+          photoFilename: plant.photo,
+        }).catch(() => {});
+      }
     }
 
     return plant;
+  }
+
+  /**
+   * Публикует в Telegram-сообщество последние N (по умолчанию 5) не архивированных растений пользователя.
+   * Используется из баннера: "сразу поделиться уже добавленными растениями".
+   */
+  async publishRecentToTelegram(
+    currentUser: Pick<User, 'telegramPublishPlants' | 'showPlants' | 'name'> & { _id: any },
+    limit = 5,
+  ): Promise<{ published: number }> {
+    if (!currentUser.telegramPublishPlants || currentUser.showPlants === false) {
+      throw new BadRequestException('Telegram publishing is disabled for this user');
+    }
+    if (!this.telegramService.isCommunityConfigured) {
+      return { published: 0 };
+    }
+
+    const plants = await this.plantModel
+      .find({ userId: currentUser._id, isArchived: { $ne: true } })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    // Публикуем от старых к новым, чтобы в чате сохранился хронологический порядок
+    const ordered = [...plants].reverse();
+    let published = 0;
+    for (const plant of ordered) {
+      const [genus, variety] = await Promise.all([
+        this.genusModel.findById(plant.genusId).select('nameRu nameEn').lean(),
+        plant.varietyId ? this.varietyModel.findById(plant.varietyId).select('nameRu nameEn').lean() : null,
+      ]);
+      const genusName = genus?.nameRu || genus?.nameEn || String(plant.genusId);
+      try {
+        await this.telegramService.publishPlantToCommunity({
+          userId: String(currentUser._id),
+          username: currentUser.name,
+          plantId: String(plant._id),
+          genusName,
+          varietyName: variety?.nameRu || variety?.nameEn || undefined,
+          description: plant.description,
+          photoFilename: plant.photo,
+        });
+        published++;
+      } catch {
+        // ignore individual failures, continue with the rest
+      }
+    }
+
+    return { published };
   }
 
   async findAll(userId: string, filters: PlantFilterDto = {}): Promise<Plant[]> {

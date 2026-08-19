@@ -10,6 +10,7 @@ import { Genus, GenusSchema } from '../genus/schemas/genus.schema';
 import { Variety, VarietySchema } from '../variety/schemas/variety.schema';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AiRecognitionLogModule } from '../ai-recognition/ai-recognition-log.module';
+import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AiRecognitionLogModule } from '../ai-recognition/ai-recognition-log.mod
     ]),
     NotificationsModule,
     AiRecognitionLogModule,
+    TelegramModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],

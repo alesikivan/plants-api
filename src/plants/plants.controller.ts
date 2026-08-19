@@ -57,7 +57,13 @@ export class PlantsController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req,
   ) {
-    return this.plantsService.create(createPlantDto, file, req.user._id, req.user.name);
+    return this.plantsService.create(createPlantDto, file, req.user._id, req.user.name, req.user);
+  }
+
+  /** Publish user's recent plants to the Telegram community (one-off, from the banner) */
+  @Post('telegram/publish-recent')
+  publishRecentToTelegram(@Request() req) {
+    return this.plantsService.publishRecentToTelegram(req.user, 5);
   }
 
   @Get()
@@ -219,6 +225,7 @@ export class PlantsController {
       files,
       req.user._id,
       req.user.name,
+      req.user,
     );
   }
 

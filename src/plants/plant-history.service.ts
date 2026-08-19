@@ -4,6 +4,8 @@ import { Model } from 'mongoose';
 import { PlantHistory, PlantHistoryDocument } from './schemas/plant-history.schema';
 import { Plant, PlantDocument } from './schemas/plant.schema';
 import { Genus, GenusDocument } from '../genus/schemas/genus.schema';
+import { Variety, VarietyDocument } from '../variety/schemas/variety.schema';
+import { User } from '../users/schemas/user.schema';
 import { CreatePlantHistoryDto } from './dto/create-plant-history.dto';
 import { UpdatePlantHistoryDto } from './dto/update-plant-history.dto';
 import * as fs from 'fs';
@@ -17,6 +19,7 @@ export class PlantHistoryService {
     @InjectModel(PlantHistory.name) private plantHistoryModel: Model<PlantHistoryDocument>,
     @InjectModel(Plant.name) private plantModel: Model<PlantDocument>,
     @InjectModel(Genus.name) private genusModel: Model<GenusDocument>,
+    @InjectModel(Variety.name) private varietyModel: Model<VarietyDocument>,
     private readonly telegramService: TelegramService,
   ) {}
 
@@ -26,6 +29,7 @@ export class PlantHistoryService {
     files: Express.Multer.File[] | undefined,
     userId: string,
     username?: string,
+    currentUser?: Pick<User, 'telegramPublishHistory' | 'showPlants' | 'showPlantHistory'>,
   ): Promise<PlantHistory> {
     // Проверяем, что растение существует и принадлежит пользователю
     const plant = await this.plantModel.findOne({ _id: plantId, userId }).exec();
@@ -41,8 +45,9 @@ export class PlantHistoryService {
       throw new BadRequestException('Either comment or photos must be provided');
     }
 
+    const { skipNotification, publishToTelegram, ...historyFields } = createPlantHistoryDto;
     const historyData: any = {
-      ...createPlantHistoryDto,
+      ...historyFields,
       plantId,
       userId,
       photos: [],
@@ -56,10 +61,32 @@ export class PlantHistoryService {
     const history = new this.plantHistoryModel(historyData);
     await history.save();
 
-    if (username && !createPlantHistoryDto.skipNotification) {
+    // skipNotification: first history created together with the plant — photo already went out with the plant post
+    if (username && !skipNotification) {
       const genus = await this.genusModel.findById(plant.genusId).select('nameRu nameEn').lean();
       const genusName = genus?.nameRu || genus?.nameEn || String(plant.genusId);
       this.telegramService.notifyHistoryCreated(userId, username, plantId, genusName, history.photos || []).catch(() => {});
+
+      // Auto-publish to Telegram community: user opted in, plants+history public, not opted out for this post
+      const shouldPublish =
+        currentUser?.telegramPublishHistory === true &&
+        currentUser?.showPlants !== false &&
+        currentUser?.showPlantHistory !== false &&
+        publishToTelegram !== false;
+      if (shouldPublish) {
+        const variety = plant.varietyId
+          ? await this.varietyModel.findById(plant.varietyId).select('nameRu nameEn').lean()
+          : null;
+        this.telegramService.publishHistoryToCommunity({
+          userId: String(userId),
+          username,
+          plantId,
+          genusName,
+          varietyName: variety?.nameRu || variety?.nameEn || undefined,
+          comment: history.comment,
+          photoFilenames: history.photos || [],
+        }).catch(() => {});
+      }
     }
 
     return history;

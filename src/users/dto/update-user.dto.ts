@@ -45,6 +45,18 @@ export class UpdateUserDto {
   @IsOptional()
   showWishlist?: boolean;
 
+  @IsBoolean()
+  @IsOptional()
+  telegramPublishPlants?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  telegramPublishHistory?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  telegramBannerDismissed?: boolean;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SocialLinkDto)

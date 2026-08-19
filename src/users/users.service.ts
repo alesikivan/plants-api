@@ -234,6 +234,16 @@ export class UsersService {
       updateUserDto.showPlantHistory = false;
     }
 
+    // Telegram auto-publish requires public plants/history (posts link to public pages)
+    const effectiveShowPlants = updateUserDto.showPlants ?? currentUser.showPlants ?? true;
+    const effectiveShowHistory = updateUserDto.showPlantHistory ?? currentUser.showPlantHistory ?? true;
+    if (!effectiveShowPlants) {
+      updateUserDto.telegramPublishPlants = false;
+      updateUserDto.telegramPublishHistory = false;
+    } else if (!effectiveShowHistory) {
+      updateUserDto.telegramPublishHistory = false;
+    }
+
     const oldName = currentUser.name;
 
     const user = await this.userModel.findByIdAndUpdate(
@@ -498,6 +508,9 @@ export class UsersService {
       showPlantHistory: user.showPlantHistory ?? true,
       showWishlist: user.showWishlist ?? false,
       isBlocked: user.isBlocked ?? false,
+      telegramPublishPlants: user.telegramPublishPlants ?? false,
+      telegramPublishHistory: user.telegramPublishHistory ?? false,
+      telegramBannerDismissed: user.telegramBannerDismissed ?? false,
       bio: user.bio,
       avatar: user.avatar,
       socialLinks: user.socialLinks || [],
