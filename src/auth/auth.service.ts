@@ -8,6 +8,7 @@ import { TelegramService } from '../telegram/telegram.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
+import { parseUserAgent } from '../common/utils/device';
 import { UserDocument } from '../users/schemas/user.schema';
 import { I18nService } from 'nestjs-i18n';
 
@@ -30,7 +31,11 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto, userAgent = ''): Promise<{ requiresVerification: true }> {
-    const { user, verificationToken } = await this.usersService.create(registerDto);
+    const { user, verificationToken } = await this.usersService.create(
+      registerDto,
+      false,
+      parseUserAgent(userAgent),
+    );
     const frontendUrl = this.configService.get<string>('frontendUrl') || process.env.FRONTEND_URL;
 
     try {
@@ -52,7 +57,7 @@ export class AuthService {
     return { requiresVerification: true };
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResult> {
+  async login(loginDto: LoginDto, userAgent = ''): Promise<AuthResult> {
     const user = await this.validateUser(loginDto.email, loginDto.password);
     if (!user) {
       throw new UnauthorizedException(await this.i18n.translate('auth.errors.invalidCredentials'));
@@ -76,6 +81,7 @@ export class AuthService {
     });
 
     await this.usersService.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+    this.usersService.updateLastDevice(user._id.toString(), parseUserAgent(userAgent)).catch(() => {});
 
     return {
       user,
@@ -115,7 +121,7 @@ export class AuthService {
     }
   }
 
-  async refresh(userId: string, refreshToken: string): Promise<{ accessToken: string }> {
+  async refresh(userId: string, refreshToken: string, userAgent = ''): Promise<{ accessToken: string }> {
     const user = await this.usersService.findById(userId);
     if (!user || !user.refreshToken) {
       throw new UnauthorizedException(await this.i18n.translate('auth.errors.invalidRefreshToken'));
@@ -140,6 +146,8 @@ export class AuthService {
       secret: this.configService.get<string>('jwt.accessSecret'),
       expiresIn: this.configService.get<string>('jwt.accessExpiration'),
     });
+
+    this.usersService.updateLastDevice(userId, parseUserAgent(userAgent)).catch(() => {});
 
     return { accessToken };
   }

@@ -1,8 +1,19 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
 import { Role } from '../../common/enums/role.enum';
+import { DeviceInfo } from '../../common/utils/device';
 
 export type UserDocument = User & Document;
+
+const DeviceInfoSchema = new MongooseSchema(
+  {
+    userAgent: { type: String },
+    os: { type: String },
+    browser: { type: String },
+    deviceType: { type: String },
+  },
+  { _id: false },
+);
 
 export interface SocialLink {
   type: string;
@@ -87,6 +98,17 @@ export class User {
     default: [],
   })
   socialLinks?: SocialLink[];
+
+  // Device the user registered from (parsed User-Agent)
+  @Prop({ type: DeviceInfoSchema, default: null })
+  registrationDevice?: DeviceInfo | null;
+
+  // Device of the latest login / token refresh
+  @Prop({ type: DeviceInfoSchema, default: null })
+  lastDevice?: DeviceInfo | null;
+
+  @Prop({ type: Date, default: null })
+  lastSeenAt?: Date | null;
 
   createdAt: Date;
   updatedAt: Date;

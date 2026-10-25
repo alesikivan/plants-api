@@ -61,9 +61,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginDto: LoginDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<AuthResponseDto> {
-    const result = await this.authService.login(loginDto);
+    const result = await this.authService.login(loginDto, req.headers['user-agent'] || '');
 
     // Set httpOnly cookies
     this.setAuthCookies(response, result.accessToken, result.refreshToken);
@@ -79,9 +80,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async refresh(
     @CurrentUser() payload: any,
+    @Req() req: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<{ message: string }> {
-    const result = await this.authService.refresh(payload.sub, payload.refreshToken);
+    const result = await this.authService.refresh(
+      payload.sub,
+      payload.refreshToken,
+      req.headers['user-agent'] || '',
+    );
 
     // Update only access token in cookie
     response.cookie('accessToken', result.accessToken, getAuthCookieOptions('access'));

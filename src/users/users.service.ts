@@ -21,6 +21,7 @@ import { Follow, FollowDocument } from '../follows/schemas/follow.schema';
 import { Bookmark, BookmarkDocument } from '../bookmarks/schemas/bookmark.schema';
 import { Role } from '../common/enums/role.enum';
 import { compressImage } from '../common/utils/compress-image';
+import { DeviceInfo } from '../common/utils/device';
 import { FILE_UPLOAD_CONFIG } from '../config/file-upload.config';
 import { I18nService } from 'nestjs-i18n';
 import { TelegramService } from '../telegram/telegram.service';
@@ -111,6 +112,7 @@ export class UsersService {
   async create(
     createUserDto: CreateUserDto,
     skipVerification = false,
+    device: DeviceInfo | null = null,
   ): Promise<{ user: UserDocument; verificationToken: string | null }> {
     const existingUser = await this.userModel.findOne({ email: createUserDto.email });
     if (existingUser) {
@@ -140,6 +142,7 @@ export class UsersService {
       ...createUserDto,
       password: hashedPassword,
       ...verificationFields,
+      ...(device && { registrationDevice: device, lastDevice: device, lastSeenAt: new Date() }),
     });
 
     const saved = await user.save();
@@ -206,6 +209,14 @@ export class UsersService {
   async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
     const hashedRefreshToken = refreshToken ? await bcrypt.hash(refreshToken, 10) : null;
     await this.userModel.findByIdAndUpdate(userId, { refreshToken: hashedRefreshToken });
+  }
+
+  async updateLastDevice(userId: string, device: DeviceInfo | null): Promise<void> {
+    if (!device) return;
+    await this.userModel.updateOne(
+      { _id: new Types.ObjectId(userId) },
+      { $set: { lastDevice: device, lastSeenAt: new Date() } },
+    );
   }
 
   async findAll(): Promise<UserDocument[]> {
@@ -517,6 +528,15 @@ export class UsersService {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     });
+  }
+
+  // Admin-only view: adds device info, which is not exposed in public/own profile responses
+  toAdminResponseDto(user: UserDocument): UserResponseDto {
+    const dto = this.toResponseDto(user);
+    dto.registrationDevice = user.registrationDevice ?? null;
+    dto.lastDevice = user.lastDevice ?? null;
+    dto.lastSeenAt = user.lastSeenAt ?? null;
+    return dto;
   }
 
   async uploadAvatar(userId: string, file: Express.Multer.File): Promise<UserDocument> {

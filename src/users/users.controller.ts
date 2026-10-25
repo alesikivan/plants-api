@@ -180,7 +180,7 @@ export class UsersController {
   @Roles(Role.ADMIN)
   async findAll(): Promise<UserResponseDto[]> {
     const users = await this.usersService.findAll();
-    return users.map(user => this.usersService.toResponseDto(user));
+    return users.map(user => this.usersService.toAdminResponseDto(user));
   }
 
   // Admin: create user
