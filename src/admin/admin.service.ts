@@ -50,6 +50,12 @@ export interface StatsInfo {
   varieties: { total: number };
 }
 
+export interface ActivityBucket {
+  hour: string; // ISO start of the hour (UTC)
+  plants: number;
+  history: number;
+}
+
 export interface AdminInfoResponse {
   uploads: UploadsInfo;
   stats: StatsInfo;
@@ -95,6 +101,38 @@ export class AdminService {
     const uploads = this.getUploadsInfo();
     const stats = await this.getStatsInfo();
     return { uploads, stats };
+  }
+
+  // Hourly counts of new plants and plant history entries for the last `hours` hours
+  async getActivity(hours: number): Promise<ActivityBucket[]> {
+    const HOUR = 60 * 60 * 1000;
+    const currentHour = Math.floor(Date.now() / HOUR) * HOUR;
+    const since = new Date(currentHour - (hours - 1) * HOUR);
+
+    const hourlyCounts = (model: Model<any>) =>
+      model.aggregate<{ _id: Date; count: number }>([
+        { $match: { createdAt: { $gte: since } } },
+        { $group: { _id: { $dateTrunc: { date: '$createdAt', unit: 'hour' } }, count: { $sum: 1 } } },
+      ]);
+
+    const [plants, history] = await Promise.all([
+      hourlyCounts(this.plantModel),
+      hourlyCounts(this.plantHistoryModel),
+    ]);
+
+    const toMap = (rows: { _id: Date; count: number }[]) =>
+      new Map(rows.map((row) => [new Date(row._id).getTime(), row.count]));
+    const plantsByHour = toMap(plants);
+    const historyByHour = toMap(history);
+
+    return Array.from({ length: hours }, (_, i) => {
+      const time = since.getTime() + i * HOUR;
+      return {
+        hour: new Date(time).toISOString(),
+        plants: plantsByHour.get(time) ?? 0,
+        history: historyByHour.get(time) ?? 0,
+      };
+    });
   }
 
   private getUploadsInfo(): UploadsInfo {

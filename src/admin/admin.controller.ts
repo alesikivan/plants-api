@@ -4,7 +4,7 @@ import { memoryStorage } from 'multer';
 import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { FILE_UPLOAD_CONFIG, createImageFileFilter } from '../config/file-upload.config';
 import { TelegramService, CommunityTopic, COMMUNITY_TOPICS } from '../telegram/telegram.service';
-import { AdminService, AdminInfoResponse } from './admin.service';
+import { AdminService, AdminInfoResponse, ActivityBucket } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -90,6 +90,15 @@ export class AdminController {
   @Roles(Role.ADMIN)
   async getInfo(): Promise<AdminInfoResponse> {
     return this.adminService.getInfo();
+  }
+
+  @Get('activity')
+  @Roles(Role.ADMIN)
+  async getActivity(@Query('hours') hours?: string): Promise<ActivityBucket[]> {
+    const parsed = parseInt(hours ?? '', 10);
+    // Up to one week of hourly buckets
+    const safeHours = Number.isFinite(parsed) ? Math.min(Math.max(parsed, 1), 168) : 168;
+    return this.adminService.getActivity(safeHours);
   }
 
   @Post('notifications/broadcast')
