@@ -1,20 +1,23 @@
 {
+  "footer": "PlantSheep · a diary for your plant collection",
   "verification": {
-    "subject": "Verify your PlantSheep email",
-    "heading": "Welcome to PlantSheep!",
-    "intro": "To complete your registration, please verify your email address by clicking the button below:",
-    "buttonText": "Verify Email",
-    "linkText": "Or copy and paste this link:",
-    "validity": "This link is valid for 24 hours.",
-    "ignoreText": "If you didn't sign up for PlantSheep, please ignore this email."
+    "subject": "Confirm your email — PlantSheep",
+    "preheader": "One click and you can add your first plants",
+    "heading": "Just one more step",
+    "intro": "Confirm your email and you can start adding plants to your collection.",
+    "buttonText": "Confirm email",
+    "linkText": "If the button doesn't work, open this link:",
+    "validity": "The link works for 24 hours.",
+    "ignoreText": "Didn't sign up for PlantSheep? Just delete this email."
   },
   "passwordReset": {
-    "subject": "Reset your PlantSheep password",
-    "heading": "Password Reset for PlantSheep",
-    "intro": "You requested a password reset. Click the button below to create a new password:",
-    "buttonText": "Reset Password",
-    "linkText": "Or copy and paste this link:",
-    "validity": "This link is valid for 1 hour.",
-    "ignoreText": "If you didn't request a password reset, please ignore this email."
+    "subject": "A new password for PlantSheep",
+    "preheader": "Your link to set a new password",
+    "heading": "Let's set a new password",
+    "intro": "You asked to reset your password. Tap the button and choose a new one.",
+    "buttonText": "Choose a password",
+    "linkText": "If the button doesn't work, open this link:",
+    "validity": "The link works for 1 hour.",
+    "ignoreText": "Didn't ask for this? Do nothing — your password stays the same."
   }
 }

@@ -2,20 +2,30 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { I18nService } from 'nestjs-i18n';
 import * as nodemailer from 'nodemailer';
+import * as fs from 'fs';
+import * as path from 'path';
+import { renderEmail } from './email-template';
 
 interface EmailTemplate {
   subject: string;
+  preheader: string;
   heading: string;
   intro: string;
   buttonText: string;
   linkText: string;
   validity: string;
   ignoreText: string;
+  footer: string;
 }
+
+// Logo is attached inline (cid) so it shows regardless of FRONTEND_URL reachability
+const LOGO_CID = 'plantsheep-logo';
+const LOGO_PATH = path.join(__dirname, 'assets', 'logo.png');
 
 @Injectable()
 export class MailerService {
   private transporter: nodemailer.Transporter;
+  private readonly logo: Buffer | null = fs.existsSync(LOGO_PATH) ? fs.readFileSync(LOGO_PATH) : null;
 
   constructor(
     private configService: ConfigService,
@@ -36,43 +46,37 @@ export class MailerService {
     const prefix = `emails.${type}`;
     return {
       subject: await this.i18n.translate(`${prefix}.subject`, { lang: language }),
+      preheader: await this.i18n.translate(`${prefix}.preheader`, { lang: language }),
       heading: await this.i18n.translate(`${prefix}.heading`, { lang: language }),
       intro: await this.i18n.translate(`${prefix}.intro`, { lang: language }),
       buttonText: await this.i18n.translate(`${prefix}.buttonText`, { lang: language }),
       linkText: await this.i18n.translate(`${prefix}.linkText`, { lang: language }),
       validity: await this.i18n.translate(`${prefix}.validity`, { lang: language }),
       ignoreText: await this.i18n.translate(`${prefix}.ignoreText`, { lang: language }),
+      footer: await this.i18n.translate('emails.footer', { lang: language }),
     };
   }
 
-  private generateEmailHtml(template: EmailTemplate, link: string): string {
-    return `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #2d6a4f;">${template.heading}</h2>
-        <p>${template.intro}</p>
-        <a href="${link}"
-           style="display: inline-block; background-color: #2d6a4f; color: white; padding: 12px 24px;
-                  text-decoration: none; border-radius: 6px; margin: 16px 0;">
-          ${template.buttonText}
-        </a>
-        <p style="color: #666; font-size: 14px;">${template.linkText} <a href="${link}">${link}</a></p>
-        <p style="color: #666; font-size: 14px;">${template.validity}</p>
-        <p style="color: #999; font-size: 12px;">${template.ignoreText}</p>
-      </div>
-    `;
+  private generateEmailHtml(template: EmailTemplate, link: string, siteUrl: string, language: string): string {
+    return renderEmail({ ...template, link, siteUrl, lang: language, logoSrc: this.logo ? `cid:${LOGO_CID}` : null });
+  }
+
+  private get attachments(): nodemailer.SendMailOptions['attachments'] {
+    return this.logo ? [{ filename: 'logo.png', content: this.logo, cid: LOGO_CID }] : [];
   }
 
   async sendPasswordResetEmail(to: string, token: string, frontendUrl: string, language: string = 'en'): Promise<void> {
     const resetLink = `${frontendUrl}/reset-password?token=${token}`;
     const from = this.configService.get<string>('smtp.from');
     const template = await this.getTemplate('passwordReset', language);
-    const html = this.generateEmailHtml(template, resetLink);
+    const html = this.generateEmailHtml(template, resetLink, frontendUrl, language);
 
     await this.transporter.sendMail({
       from,
       to,
       subject: template.subject,
       html,
+      attachments: this.attachments,
     });
   }
 
@@ -80,13 +84,14 @@ export class MailerService {
     const verificationLink = `${frontendUrl}/verify-email?token=${token}`;
     const from = this.configService.get<string>('smtp.from');
     const template = await this.getTemplate('verification', language);
-    const html = this.generateEmailHtml(template, verificationLink);
+    const html = this.generateEmailHtml(template, verificationLink, frontendUrl, language);
 
     await this.transporter.sendMail({
       from,
       to,
       subject: template.subject,
       html,
+      attachments: this.attachments,
     });
   }
 }
