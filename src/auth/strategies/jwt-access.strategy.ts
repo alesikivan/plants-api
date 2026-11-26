@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
+import { accessCookieName } from '../cookie.config';
 import { I18nService, I18nContext } from 'nestjs-i18n';
 import { UsersService } from '../../users/users.service';
 import { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
@@ -17,7 +18,7 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt-access') 
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
-          return request?.cookies?.accessToken;
+          return request?.cookies?.[accessCookieName()];
         },
       ]),
       ignoreExpiration: false,

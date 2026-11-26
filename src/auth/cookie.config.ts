@@ -1,5 +1,12 @@
 import { CookieOptions } from 'express';
 
+// Optional prefix for auth cookie names (e.g. "stage_" on staging), so a staging site on a
+// subdomain doesn't clash with production cookies set on the parent domain. Empty = prod/local.
+// Read lazily: .env is loaded by ConfigModule after this module is imported.
+const cookiePrefix = () => process.env.AUTH_COOKIE_PREFIX || '';
+export const accessCookieName = () => `${cookiePrefix()}accessToken`;
+export const refreshCookieName = () => `${cookiePrefix()}refreshToken`;
+
 export function getAuthCookieOptions(
   type: 'access' | 'refresh',
 ): CookieOptions {

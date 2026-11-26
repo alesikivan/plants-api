@@ -12,7 +12,7 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { UserDocument } from '../users/schemas/user.schema';
-import { getAuthCookieOptions, getClearCookieOptions } from './cookie.config';
+import { getAuthCookieOptions, getClearCookieOptions, accessCookieName, refreshCookieName } from './cookie.config';
 import { I18nService } from 'nestjs-i18n';
 
 @Controller('auth')
@@ -90,7 +90,7 @@ export class AuthController {
     );
 
     // Update only access token in cookie
-    response.cookie('accessToken', result.accessToken, getAuthCookieOptions('access'));
+    response.cookie(accessCookieName(), result.accessToken, getAuthCookieOptions('access'));
 
     return { message: await this.i18n.translate('auth.messages.tokenRefreshed') };
   }
@@ -106,8 +106,8 @@ export class AuthController {
 
     // Clear cookies with same options used when setting them
     const clearOptions = getClearCookieOptions();
-    response.clearCookie('accessToken', clearOptions);
-    response.clearCookie('refreshToken', clearOptions);
+    response.clearCookie(accessCookieName(), clearOptions);
+    response.clearCookie(refreshCookieName(), clearOptions);
 
     return { message: await this.i18n.translate('auth.messages.logoutSuccess') };
   }
@@ -118,14 +118,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async clearSession(@Res({ passthrough: true }) response: Response): Promise<{ message: string }> {
     const clearOptions = getClearCookieOptions();
-    response.clearCookie('accessToken', clearOptions);
-    response.clearCookie('refreshToken', clearOptions);
+    response.clearCookie(accessCookieName(), clearOptions);
+    response.clearCookie(refreshCookieName(), clearOptions);
     return { message: await this.i18n.translate('auth.messages.sessionCleared') };
   }
 
   // Helper method to set auth cookies
   private setAuthCookies(response: Response, accessToken: string, refreshToken: string): void {
-    response.cookie('accessToken', accessToken, getAuthCookieOptions('access'));
-    response.cookie('refreshToken', refreshToken, getAuthCookieOptions('refresh'));
+    response.cookie(accessCookieName(), accessToken, getAuthCookieOptions('access'));
+    response.cookie(refreshCookieName(), refreshToken, getAuthCookieOptions('refresh'));
   }
 }
